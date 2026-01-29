@@ -22,6 +22,11 @@ function safeDecode(v: string | null): string | null {
   }
 }
 
+// ✅ helper: null -> undefined (para calzar tipos en VehicleForm)
+function nullToUndef<T>(v: T | null | undefined): T | undefined {
+  return v === null || v === undefined ? undefined : v;
+}
+
 export default function VehicleEditPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -61,6 +66,31 @@ export default function VehicleEditPage() {
     if (!data) return "#";
     return `/activities/new?vehicleId=${data.id}&returnTo=${encodeURIComponent(selfHref)}`;
   }, [data, selfHref]);
+
+  // ✅ Adaptamos el Vehicle a lo que VehicleForm espera (sin nulls)
+  const formInitial = useMemo(() => {
+    if (!data) return undefined;
+
+    return {
+      // ids requeridos por el form
+      branchId: (data as any).branchId ?? data.branch?.id ?? "",
+      brandId: (data as any).brandId ?? data.brand?.id ?? "",
+      modelId: (data as any).modelId ?? data.model?.id ?? "",
+
+      // strings/nums normalizados (null -> undefined)
+      title: nullToUndef((data as any).title),
+      description: nullToUndef((data as any).description),
+      year: nullToUndef((data as any).year),
+      price: nullToUndef((data as any).price),
+      mileage: nullToUndef((data as any).mileage),
+      vin: nullToUndef((data as any).vin),
+      color: nullToUndef((data as any).color),
+      transmission: nullToUndef((data as any).transmission),
+      fuelType: nullToUndef((data as any).fuelType),
+
+      isPublished: !!(data as any).isPublished
+    };
+  }, [data]);
 
   async function load() {
     setErr(null);
@@ -135,11 +165,7 @@ export default function VehicleEditPage() {
   if (!data) {
     return (
       <div className="p-3">
-        {err ? (
-          <InlineAlert type="danger" message={err} onClose={() => setErr(null)} />
-        ) : (
-          <div className="text-muted">Sin datos.</div>
-        )}
+        {err ? <InlineAlert type="danger" message={err} onClose={() => setErr(null)} /> : <div className="text-muted">Sin datos.</div>}
 
         <button className="btn btn-outline-secondary mt-3" onClick={() => router.push(returnTo)}>
           Volver
@@ -196,7 +222,8 @@ export default function VehicleEditPage() {
               {isArchived ? <span className="badge text-bg-secondary ms-2">ARCHIVED</span> : null}
             </div>
             <div className="card-body">
-              <VehicleForm initial={data} onSubmit={onSubmit} saving={saving || isArchived} />
+              {/* ✅ ahora initial ya no tiene nulls */}
+              <VehicleForm initial={formInitial} onSubmit={onSubmit} saving={saving || isArchived} />
               {isArchived ? (
                 <div className="alert alert-light border small mt-3 mb-0">
                   Este vehículo está archivado. No se permite editar ni publicar.

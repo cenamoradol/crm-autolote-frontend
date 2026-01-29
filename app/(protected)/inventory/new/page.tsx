@@ -10,8 +10,9 @@ import { createVehicle } from "@/lib/vehicles";
 function safeDecode(v: string | null): string | null {
   if (!v) return null;
   try {
-    const d = decodeURIComponent(v);
-    return d.startsWith("/") ? d : null;
+    const d = decodeURIComponent(v).trim();
+    if (!d.startsWith("/") || d.startsWith("//")) return null;
+    return d;
   } catch {
     return null;
   }
@@ -41,9 +42,10 @@ export default function VehicleCreatePage() {
 
       <div className="col-12">
         <VehicleForm
-          mode="create"
           submitLabel="Crear"
-          backHref={returnTo}
+          onCancel={() => {
+            window.location.href = returnTo;
+          }}
           onSubmit={async (payload) => {
             try {
               const created = await createVehicle(payload);

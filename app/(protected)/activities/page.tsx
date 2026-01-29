@@ -6,7 +6,12 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import ActivityTable from "@/components/activities/ActivityTable";
-import { listActivities, type Activity, type ActivityListMeta } from "@/lib/activities";
+import {
+  listActivities,
+  type Activity,
+  type ActivityListMeta,
+  type ActivityType
+} from "@/lib/activities";
 
 function safeDecode(v: string | null): string | null {
   if (!v) return null;
@@ -18,6 +23,12 @@ function safeDecode(v: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+const ACTIVITY_TYPES: ActivityType[] = ["CALL", "WHATSAPP", "EMAIL", "MEETING", "NOTE"];
+
+function isActivityType(v: string): v is ActivityType {
+  return (ACTIVITY_TYPES as readonly string[]).includes(v);
 }
 
 export default function ActivitiesPage() {
@@ -53,13 +64,24 @@ export default function ActivitiesPage() {
   }, [sp, listUrl]);
 
   const [items, setItems] = useState<Activity[]>([]);
-  const [meta, setMeta] = useState<ActivityListMeta>({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [meta, setMeta] = useState<ActivityListMeta>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+  });
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const [q, setQ] = useState(sp.get("q") ?? "");
-  const [type, setType] = useState(sp.get("type") ?? "");
+
+  // ✅ TIPADO CORRECTO: ActivityType | ""
+  const [type, setType] = useState<ActivityType | "">(() => {
+    const t = sp.get("type") ?? "";
+    return t && isActivityType(t) ? t : "";
+  });
+
   const [createdFrom, setCreatedFrom] = useState(sp.get("createdFrom") ?? "");
   const [createdTo, setCreatedTo] = useState(sp.get("createdTo") ?? "");
 
@@ -75,7 +97,7 @@ export default function ActivitiesPage() {
         page,
         limit: meta.limit,
         q: q.trim().length >= 2 ? q.trim() : undefined,
-        type: type || undefined,
+        type: type ? type : undefined, // ✅ ActivityType | undefined
         createdFrom: createdFrom || undefined,
         createdTo: createdTo || undefined,
         leadId: leadId || undefined,
@@ -96,7 +118,10 @@ export default function ActivitiesPage() {
 
   useEffect(() => {
     setQ(sp.get("q") ?? "");
-    setType(sp.get("type") ?? "");
+
+    const nextType = sp.get("type") ?? "";
+    setType(nextType && isActivityType(nextType) ? nextType : "");
+
     setCreatedFrom(sp.get("createdFrom") ?? "");
     setCreatedTo(sp.get("createdTo") ?? "");
 
@@ -197,24 +222,41 @@ export default function ActivitiesPage() {
 
           <div className="col-12 col-md-3">
             <label className="form-label">Tipo</label>
-            <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
+            <select
+              className="form-select"
+              value={type}
+              onChange={(e) => {
+                const v = e.target.value;
+                setType(v && isActivityType(v) ? v : "");
+              }}
+            >
               <option value="">(Todos)</option>
-              <option value="CALL">CALL</option>
-              <option value="WHATSAPP">WHATSAPP</option>
-              <option value="EMAIL">EMAIL</option>
-              <option value="MEETING">MEETING</option>
-              <option value="NOTE">NOTE</option>
+              {ACTIVITY_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="col-6 col-md-2">
             <label className="form-label">Desde</label>
-            <input type="date" className="form-control" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} />
+            <input
+              type="date"
+              className="form-control"
+              value={createdFrom}
+              onChange={(e) => setCreatedFrom(e.target.value)}
+            />
           </div>
 
           <div className="col-6 col-md-2">
             <label className="form-label">Hasta</label>
-            <input type="date" className="form-control" value={createdTo} onChange={(e) => setCreatedTo(e.target.value)} />
+            <input
+              type="date"
+              className="form-control"
+              value={createdTo}
+              onChange={(e) => setCreatedTo(e.target.value)}
+            />
           </div>
 
           <div className="col-12 d-flex gap-2">

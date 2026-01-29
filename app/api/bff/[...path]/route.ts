@@ -7,13 +7,16 @@ import { normalizeHost, isMasterHost } from "@/lib/host";
 const isUUID = (v?: string) =>
   !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 
+type RouteCtx = { params: Promise<{ path: string[] }> | { path: string[] } };
+
+// ✅ IMPORTANTE: anotamos retorno para evitar implicit any en recursión
 async function forward(
   req: Request,
   pathWithSearch: string,
   accessToken?: string,
   bodyRaw?: ArrayBuffer,
   retry = false
-) {
+): Promise<Response> {
   const backend = process.env.BACKEND_URL!;
   const h = await headers();
   const host = normalizeHost(h.get("x-forwarded-host") || h.get("host") || "");
@@ -86,7 +89,7 @@ async function forward(
   return res;
 }
 
-async function handle(req: Request, pathArr: string[]) {
+async function handle(req: Request, pathArr: string[]): Promise<Response> {
   const ck = await cookies();
   const access = ck.get(COOKIE_ACCESS)?.value;
 
@@ -106,23 +109,23 @@ async function handle(req: Request, pathArr: string[]) {
   return NextResponse.json(data, { status: res.status });
 }
 
-export async function GET(req: Request, ctx: any) {
-  const { path } = await ctx.params;
+export async function GET(req: Request, ctx: RouteCtx) {
+  const { path } = await (ctx.params as any);
   return handle(req, path);
 }
-export async function POST(req: Request, ctx: any) {
-  const { path } = await ctx.params;
+export async function POST(req: Request, ctx: RouteCtx) {
+  const { path } = await (ctx.params as any);
   return handle(req, path);
 }
-export async function PATCH(req: Request, ctx: any) {
-  const { path } = await ctx.params;
+export async function PATCH(req: Request, ctx: RouteCtx) {
+  const { path } = await (ctx.params as any);
   return handle(req, path);
 }
-export async function DELETE(req: Request, ctx: any) {
-  const { path } = await ctx.params;
+export async function DELETE(req: Request, ctx: RouteCtx) {
+  const { path } = await (ctx.params as any);
   return handle(req, path);
 }
-export async function PUT(req: Request, ctx: any) {
-  const { path } = await ctx.params;
+export async function PUT(req: Request, ctx: RouteCtx) {
+  const { path } = await (ctx.params as any);
   return handle(req, path);
 }

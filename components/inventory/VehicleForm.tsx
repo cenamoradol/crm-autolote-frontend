@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 
+// ✅ Usa el tipo ÚNICO del lib (evita mismatch con inventory/[id]/page.tsx)
+import type { VehicleUpsertPayload } from "@/lib/vehicles";
+
 type Branch = {
   id: string;
   name: string;
@@ -22,29 +25,14 @@ type Model = {
   brandId?: string;
 };
 
-export type VehicleUpsertPayload = {
-  branchId: string;
-  brandId: string;
-  modelId: string;
-
-  title?: string | null;
-  description?: string | null;
-  year?: number | null;
-  price?: string | number | null; // backend acepta string/number para Decimal
-  mileage?: number | null;
-  vin?: string | null;
-  color?: string | null;
-  transmission?: string | null;
-  fuelType?: string | null;
-
-  isPublished?: boolean;
-};
-
 type Props = {
-  initial?: Partial<VehicleUpsertPayload>;
+  // ✅ puede venir Vehicle completo u otros campos; solo usamos los que aplican
+  initial?: Partial<VehicleUpsertPayload> & { id?: string };
   submitLabel?: string;
   onSubmit: (payload: VehicleUpsertPayload) => Promise<void> | void;
   onCancel?: () => void;
+  // (opcional) si en otros lugares quieres deshabilitar el form externamente
+  saving?: boolean;
 };
 
 async function fetchJson(url: string) {
@@ -70,19 +58,31 @@ async function fetchJson(url: string) {
   return data;
 }
 
-function toIntOrNull(v: string) {
+// ✅ En el tipo del lib normalmente se usa undefined (no null)
+function toIntOrUndefined(v: string): number | undefined {
   const s = (v ?? "").trim();
-  if (!s) return null;
+  if (!s) return undefined;
   const n = Number(s);
-  return Number.isFinite(n) ? Math.trunc(n) : null;
+  return Number.isFinite(n) ? Math.trunc(n) : undefined;
 }
 
-function toStringOrNull(v: string) {
+function toStringOrUndefined(v: string): string | undefined {
   const s = (v ?? "").trim();
-  return s ? s : null;
+  return s ? s : undefined;
 }
 
-export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit, onCancel }: Props) {
+function toPriceOrUndefined(v: string): string | number | undefined {
+  const s = (v ?? "").trim();
+  return s ? s : undefined; // backend acepta string/number para Decimal
+}
+
+export default function VehicleForm({
+  initial,
+  submitLabel = "Guardar",
+  onSubmit,
+  onCancel,
+  saving: savingExternal
+}: Props) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
@@ -92,22 +92,30 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const savingFinal = !!savingExternal || saving;
+
   // --- Form state (strings para inputs) ---
   const [branchId, setBranchId] = useState(initial?.branchId ?? "");
   const [brandId, setBrandId] = useState(initial?.brandId ?? "");
   const [modelId, setModelId] = useState(initial?.modelId ?? "");
 
-  const [title, setTitle] = useState(initial?.title ?? "");
-  const [description, setDescription] = useState(initial?.description ?? "");
+  // ✅ title en lib suele ser string | undefined (no null)
+  const [title, setTitle] = useState((initial?.title ?? "") as string);
+
+  const [description, setDescription] = useState((initial?.description ?? "") as string);
+
   const [year, setYear] = useState(initial?.year ? String(initial.year) : "");
-  const [price, setPrice] = useState(
-    initial?.price === null || initial?.price === undefined ? "" : String(initial.price),
-  );
+
+  const [price, setPrice] = useState(() => {
+    const p: any = (initial as any)?.price;
+    return p === null || p === undefined ? "" : String(p);
+  });
+
   const [mileage, setMileage] = useState(initial?.mileage ? String(initial.mileage) : "");
-  const [vin, setVin] = useState(initial?.vin ?? "");
-  const [color, setColor] = useState(initial?.color ?? "");
-  const [transmission, setTransmission] = useState(initial?.transmission ?? "");
-  const [fuelType, setFuelType] = useState(initial?.fuelType ?? "");
+  const [vin, setVin] = useState((initial?.vin ?? "") as string);
+  const [color, setColor] = useState((initial?.color ?? "") as string);
+  const [transmission, setTransmission] = useState((initial?.transmission ?? "") as string);
+  const [fuelType, setFuelType] = useState((initial?.fuelType ?? "") as string);
   const [isPublished, setIsPublished] = useState(!!initial?.isPublished);
 
   const canLoadModels = useMemo(() => !!brandId, [brandId]);
@@ -121,10 +129,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
       setError(null);
 
       try {
-        const [b1, b2] = await Promise.all([
-          fetchJson("/api/bff/branches"),
-          fetchJson("/api/bff/brands"),
-        ]);
+        const [b1, b2] = await Promise.all([fetchJson("/api/bff/branches"), fetchJson("/api/bff/brands")]);
 
         if (!alive) return;
 
@@ -205,17 +210,21 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
       branchId,
       brandId,
       modelId,
-      title: toStringOrNull(title),
-      description: toStringOrNull(description),
-      year: toIntOrNull(year),
-      mileage: toIntOrNull(mileage),
-      vin: toStringOrNull(vin),
-      color: toStringOrNull(color),
-      transmission: toStringOrNull(transmission),
-      fuelType: toStringOrNull(fuelType),
-      // price: backend lo maneja como Decimal si viene value (string/number)
-      price: price.trim() ? price.trim() : null,
-      isPublished,
+
+      // ✅ usamos undefined en lugar de null (para compatibilidad de tipos)
+      title: toStringOrUndefined(title),
+      description: toStringOrUndefined(description),
+      year: toIntOrUndefined(year),
+      mileage: toIntOrUndefined(mileage),
+      vin: toStringOrUndefined(vin),
+      color: toStringOrUndefined(color),
+      transmission: toStringOrUndefined(transmission),
+      fuelType: toStringOrUndefined(fuelType),
+
+      // backend acepta string/number para Decimal
+      price: toPriceOrUndefined(price),
+
+      isPublished
     };
 
     setSaving(true);
@@ -233,24 +242,21 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
       <div className="card-body">
         <h5 className="card-title mb-3">Vehículo</h5>
 
+        {/* ✅ InlineAlert con tu API real: type + message */}
         {error && (
           <div className="mb-3">
-            <InlineAlert variant="danger">{error}</InlineAlert>
+            <InlineAlert type="danger" message={error} onClose={() => setError(null)} />
           </div>
         )}
 
         {loadingCatalogs ? (
-          <InlineAlert variant="info">Cargando catálogos...</InlineAlert>
+          <InlineAlert type="info" message="Cargando catálogos..." />
         ) : (
           <>
             <div className="row g-3">
               <div className="col-12 col-md-4">
                 <label className="form-label">Branch</label>
-                <select
-                  className="form-select"
-                  value={branchId}
-                  onChange={(e) => setBranchId(e.target.value)}
-                >
+                <select className="form-select" value={branchId} onChange={(e) => setBranchId(e.target.value)} disabled={savingFinal}>
                   <option value="">Seleccione...</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -262,11 +268,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
 
               <div className="col-12 col-md-4">
                 <label className="form-label">Marca</label>
-                <select
-                  className="form-select"
-                  value={brandId}
-                  onChange={(e) => setBrandId(e.target.value)}
-                >
+                <select className="form-select" value={brandId} onChange={(e) => setBrandId(e.target.value)} disabled={savingFinal}>
                   <option value="">Seleccione...</option>
                   {brands.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -282,7 +284,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   className="form-select"
                   value={modelId}
                   onChange={(e) => setModelId(e.target.value)}
-                  disabled={!brandId || loadingModels}
+                  disabled={!brandId || loadingModels || savingFinal}
                 >
                   <option value="">
                     {loadingModels ? "Cargando..." : brandId ? "Seleccione..." : "Seleccione marca primero"}
@@ -302,6 +304,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ej: Toyota Corolla 2018"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -313,6 +316,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="Ej: 12500.00"
                   inputMode="decimal"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -324,6 +328,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descripción corta..."
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -335,6 +340,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   onChange={(e) => setYear(e.target.value)}
                   placeholder="Ej: 2018"
                   inputMode="numeric"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -346,6 +352,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   onChange={(e) => setMileage(e.target.value)}
                   placeholder="Ej: 65000"
                   inputMode="numeric"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -356,6 +363,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={vin}
                   onChange={(e) => setVin(e.target.value)}
                   placeholder="VIN (opcional)"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -366,6 +374,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
                   placeholder="Ej: Blanco"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -376,6 +385,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={transmission}
                   onChange={(e) => setTransmission(e.target.value)}
                   placeholder="Ej: Automática"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -386,6 +396,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                   value={fuelType}
                   onChange={(e) => setFuelType(e.target.value)}
                   placeholder="Ej: Gasolina"
+                  disabled={savingFinal}
                 />
               </div>
 
@@ -397,6 +408,7 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
                     type="checkbox"
                     checked={isPublished}
                     onChange={(e) => setIsPublished(e.target.checked)}
+                    disabled={savingFinal}
                   />
                   <label className="form-check-label" htmlFor="isPublished">
                     Publicado
@@ -406,12 +418,12 @@ export default function VehicleForm({ initial, submitLabel = "Guardar", onSubmit
             </div>
 
             <div className="d-flex gap-2 mt-4">
-              <LoadingButton className="btn btn-primary" type="submit" loading={saving}>
+              <LoadingButton className="btn btn-primary" type="submit" loading={savingFinal}>
                 {submitLabel}
               </LoadingButton>
 
               {onCancel && (
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={saving}>
+                <button type="button" className="btn btn-outline-secondary" onClick={onCancel} disabled={savingFinal}>
                   Cancelar
                 </button>
               )}

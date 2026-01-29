@@ -14,6 +14,12 @@ function money(v: any) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function parsePublished(v: string): boolean | undefined {
+  if (v === "true") return true;
+  if (v === "false") return false;
+  return undefined;
+}
+
 export default function InventoryPage() {
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -34,7 +40,7 @@ export default function InventoryPage() {
     try {
       const data = await listVehicles({
         status: (status as VehicleStatus) || undefined,
-        published: published === "true" ? "true" : published === "false" ? "false" : undefined
+        published: parsePublished(published)
       });
       setItems(data);
     } catch (e: any) {
@@ -101,7 +107,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {err && <InlineAlert message={err} onClose={() => setErr(null)} />}
+        {err && <InlineAlert type="danger" message={err} onClose={() => setErr(null)} />}
 
         <form className="row g-2 align-items-end mb-3" onSubmit={applyFilters}>
           <div className="col-12 col-md-5">
@@ -155,13 +161,17 @@ export default function InventoryPage() {
                     {v.title ?? v.publicId ?? "(Sin título)"}{" "}
                     {v.publicId ? <span className="text-muted small">· {v.publicId}</span> : null}
                   </td>
-                  <td className="text-muted">
-                    {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
-                  </td>
+                  <td className="text-muted">{(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}</td>
                   <td className="text-muted">{v.year ?? "-"}</td>
                   <td className="text-muted">{money(v.price)}</td>
                   <td>{v.status ? <span className="badge text-bg-secondary">{v.status}</span> : "-"}</td>
-                  <td>{v.isPublished ? <span className="badge text-bg-success">Sí</span> : <span className="badge text-bg-light">No</span>}</td>
+                  <td>
+                    {v.isPublished ? (
+                      <span className="badge text-bg-success">Sí</span>
+                    ) : (
+                      <span className="badge text-bg-light">No</span>
+                    )}
+                  </td>
 
                   <td className="text-end d-flex justify-content-end gap-2">
                     <Link className="btn btn-outline-primary btn-sm" href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}>
@@ -197,7 +207,6 @@ export default function InventoryPage() {
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

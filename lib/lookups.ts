@@ -10,12 +10,15 @@ function extractArray(input: any): any[] {
 }
 
 function pickLabel(...parts: Array<string | null | undefined>) {
-  const s = parts.map((x) => (x ?? "").trim()).filter(Boolean).join(" · ");
+  const s = parts
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean)
+    .join(" · ");
   return s || "(Sin nombre)";
 }
 
-function toOption(id: string, label: string, sublabel?: string): SearchOption {
-  return { id, label: label || "(Sin nombre)", sublabel: sublabel || undefined };
+function toOption(value: string, label: string, sublabel?: string): SearchOption {
+  return { value, label: label || "(Sin nombre)", sublabel: sublabel || undefined };
 }
 
 // ---------------- Customers ----------------
@@ -87,6 +90,7 @@ export async function searchVehicles(q: string): Promise<SearchOption[]> {
         const brand = String(v?.brand?.name ?? "").toLowerCase();
         const model = String(v?.model?.name ?? "").toLowerCase();
         const year = String(v?.year ?? "").toLowerCase();
+
         return (
           title.includes(needle) ||
           publicId.includes(needle) ||
@@ -111,11 +115,7 @@ export async function searchVehicles(q: string): Promise<SearchOption[]> {
       const brandName = v?.brand?.name ?? "";
       const modelName = v?.model?.name ?? "";
 
-      const label =
-        title ||
-        [brandName, modelName, year].filter(Boolean).join(" ") ||
-        publicId ||
-        id;
+      const label = title || [brandName, modelName, year].filter(Boolean).join(" ") || publicId || id;
 
       const sub = pickLabel(
         status ? `Status: ${status}` : "",

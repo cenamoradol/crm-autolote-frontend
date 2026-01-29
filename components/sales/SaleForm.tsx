@@ -1,44 +1,140 @@
-// components/sales/SaleForm.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { SearchSelect, type SearchOption } from "@/components/ui/SearchSelect";
-import {
-  createVehicleSale,
-  deleteVehicleSale,
-  type SaleUpsertPayload,
-  type VehicleSale,
-  updateVehicleSale,
-} from "@/lib/sales";
+import SearchSelect, { type SearchOption } from "@/components/ui/SearchSelect";
+
+// ✅ Tipos locales (mínimos) para este formulario
+type SaleUpsertPayload = {
+  soldAt: string; // YYYY-MM-DD
+  soldPrice: number | null;
+  notes: string | null;
+  customerId: string | null;
+  leadId: string | null;
+};
+
+type VehicleSale = {
+  id?: string;
+  soldAt?: string | null;
+  soldPrice?: any;
+  notes?: string | null;
+
+  customerId?: string | null;
+  leadId?: string | null;
+
+  customer?: { id: string; fullName?: string | null; phone?: string | null; email?: string | null } | null;
+  lead?: { id: string; fullName?: string | null; phone?: string | null; email?: string | null; status?: string | null } | null;
+};
+
+async function safeJson(res: Response) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return { raw: text };
+  }
+}
 
 async function listAllCustomers(): Promise<any[]> {
   const res = await fetch("/api/bff/customers", { cache: "no-store" });
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error((data?.message as string) || "Error cargando clientes");
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      data?.error ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
   return (data?.data ?? data) as any[];
 }
 
 async function listAllLeads(): Promise<any[]> {
   const res = await fetch("/api/bff/leads", { cache: "no-store" });
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error((data?.message as string) || "Error cargando leads");
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      data?.error ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
   return (data?.data ?? data) as any[];
 }
 
 function toOptionCustomer(c: any): SearchOption {
   return {
-    value: c.id,
+    value: String(c.id),
     label: c.fullName || "Cliente",
     sublabel: [c.phone, c.email].filter(Boolean).join(" · "),
   };
 }
+
 function toOptionLead(l: any): SearchOption {
   return {
-    value: l.id,
+    value: String(l.id),
     label: l.fullName || l.email || l.phone || "Lead",
     sublabel: [l.status, l.phone, l.email].filter(Boolean).join(" · "),
   };
+}
+
+/**
+ * ✅ Endpoints asumidos (por consistencia con tu VehicleSaleCard):
+ * - Crear:    POST   /api/bff/sales
+ * - Editar:   PATCH  /api/bff/sales/:saleId
+ * - Eliminar: DELETE /api/bff/sales/:saleId
+ */
+async function createSaleForVehicle(vehicleId: string, payload: SaleUpsertPayload): Promise<VehicleSale> {
+  const res = await fetch("/api/bff/sales", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ vehicleId, ...payload }),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      data?.error ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return (data?.data ?? data) as VehicleSale;
+}
+
+async function updateSaleById(saleId: string, payload: SaleUpsertPayload): Promise<VehicleSale> {
+  const res = await fetch(`/api/bff/sales/${encodeURIComponent(saleId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify(payload),
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      data?.error ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return (data?.data ?? data) as VehicleSale;
+}
+
+async function deleteSaleById(saleId: string): Promise<void> {
+  const res = await fetch(`/api/bff/sales/${encodeURIComponent(saleId)}`, {
+    method: "DELETE",
+    cache: "no-store",
+  });
+
+  const data = await safeJson(res);
+  if (!res.ok) {
+    const msg =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      data?.error ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
 }
 
 export default function SaleForm({
@@ -68,7 +164,7 @@ export default function SaleForm({
   useEffect(() => {
     setSale(initialSale);
 
-    const date = initialSale?.soldAt ? initialSale.soldAt.slice(0, 10) : "";
+    const date = initialSale?.soldAt ? String(initialSale.soldAt).slice(0, 10) : "";
     setSoldAt(date);
 
     setSoldPrice(
@@ -78,18 +174,18 @@ export default function SaleForm({
     setNotes(initialSale?.notes || "");
 
     setCustomerOpt(
-      initialSale?.customer
-        ? { value: initialSale.customer.id, label: initialSale.customer.fullName }
+      initialSale?.customer?.id
+        ? { value: String(initialSale.customer.id), label: initialSale.customer.fullName || "Cliente" }
         : initialSale?.customerId
-        ? { value: initialSale.customerId, label: "Cliente seleccionado" }
+        ? { value: String(initialSale.customerId), label: "Cliente seleccionado" }
         : null
     );
 
     setLeadOpt(
-      initialSale?.lead
-        ? { value: initialSale.lead.id, label: initialSale.lead.fullName || "Lead" }
+      initialSale?.lead?.id
+        ? { value: String(initialSale.lead.id), label: initialSale.lead.fullName || "Lead" }
         : initialSale?.leadId
-        ? { value: initialSale.leadId, label: "Lead seleccionado" }
+        ? { value: String(initialSale.leadId), label: "Lead seleccionado" }
         : null
     );
   }, [initialSale]);
@@ -135,14 +231,19 @@ export default function SaleForm({
       return;
     }
 
+    if (payload.soldPrice === null || Number.isNaN(payload.soldPrice)) {
+      setErr("El precio vendido (soldPrice) es obligatorio y debe ser numérico.");
+      return;
+    }
+
     setSaving(true);
     try {
-      const saved = sale
-        ? await updateVehicleSale(vehicleId, payload)
-        : await createVehicleSale(vehicleId, payload);
+      const saved = sale?.id
+        ? await updateSaleById(String(sale.id), payload)
+        : await createSaleForVehicle(vehicleId, payload);
 
       setSale(saved);
-      setOk(sale ? "Venta actualizada." : "Venta registrada.");
+      setOk(sale?.id ? "Venta actualizada." : "Venta registrada.");
       onSaved?.(saved);
     } catch (e: any) {
       setErr(e?.message || "No se pudo guardar la venta.");
@@ -155,11 +256,17 @@ export default function SaleForm({
     setErr(null);
     setOk(null);
 
+    if (!sale?.id) {
+      setErr("No hay ID de venta para eliminar.");
+      return;
+    }
+
     if (!confirm("¿Quitar la venta de este vehículo?")) return;
 
     setRemoving(true);
     try {
-      await deleteVehicleSale(vehicleId);
+      await deleteSaleById(String(sale.id));
+
       setSale(null);
       setSoldAt("");
       setSoldPrice("");
@@ -187,7 +294,7 @@ export default function SaleForm({
             </div>
           </div>
 
-          {sale ? (
+          {sale?.id ? (
             <button type="button" className="btn btn-outline-danger btn-sm" onClick={onDelete} disabled={removing}>
               {removing ? "Eliminando..." : "Eliminar venta"}
             </button>
@@ -219,11 +326,12 @@ export default function SaleForm({
                 onChange={(e) => setSoldAt(e.target.value)}
                 required
               />
-              <div className="form-text">Se guardará como fecha (sin hora) a menos que tu backend soporte hora.</div>
             </div>
 
             <div className="col-md-4">
-              <label className="form-label">Precio vendido</label>
+              <label className="form-label">
+                Precio vendido <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -232,6 +340,7 @@ export default function SaleForm({
                 min={0}
                 step="0.01"
                 placeholder="Ej: 12500"
+                required
               />
             </div>
 
@@ -242,8 +351,8 @@ export default function SaleForm({
                 onChange={setCustomerOpt}
                 loadOptions={loadCustomers}
                 placeholder="Buscar cliente por nombre, teléfono o email..."
-                helpText="Recomendado: asociar la venta a un cliente."
               />
+              <div className="form-text">Recomendado: asociar la venta a un cliente.</div>
             </div>
 
             <div className="col-md-12">
@@ -253,8 +362,8 @@ export default function SaleForm({
                 onChange={setLeadOpt}
                 loadOptions={loadLeads}
                 placeholder="Buscar lead por nombre, teléfono o email..."
-                helpText="Si esta venta viene de un lead, selecciónalo aquí."
               />
+              <div className="form-text">Si esta venta viene de un lead, selecciónalo aquí.</div>
             </div>
 
             <div className="col-md-12">
@@ -271,7 +380,7 @@ export default function SaleForm({
 
           <div className="mt-3 d-flex gap-2">
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? "Guardando..." : sale ? "Guardar cambios" : "Registrar venta"}
+              {saving ? "Guardando..." : sale?.id ? "Guardar cambios" : "Registrar venta"}
             </button>
           </div>
         </form>
