@@ -34,7 +34,7 @@ export default function LoginPage() {
 
       const mode = data?.context?.mode as string | undefined;
       if (mode === "master") window.location.href = "/sa";
-      else window.location.href = "/dashboard";
+      else window.location.href = "/inventory";
     } catch (e: any) {
       setErr(e?.message || "Error");
     } finally {

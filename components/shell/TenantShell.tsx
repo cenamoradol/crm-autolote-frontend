@@ -14,11 +14,14 @@ export default function TenantShell({ storeName, children }: { storeName: string
       />
       <div className="container py-3">
         <div className="d-flex gap-2 mb-3">
-          <Link className="btn btn-light" href="/dashboard">
+          {/* <Link className="btn btn-light" href="/dashboard">
             Dashboard
-          </Link>
+          </Link> */}
           <Link className="btn btn-light" href="/inventory">
-            Inventario
+            Inventarios
+          </Link>
+          <Link className="btn btn-light" href="/sales">
+            Ventas
           </Link>
         </div>
         {children}

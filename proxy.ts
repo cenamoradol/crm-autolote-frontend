@@ -29,21 +29,18 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow Next internals + static + api
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api")
-  ) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
   const host = normalizeHost(req.headers.get("x-forwarded-host") || req.headers.get("host") || "");
   const master = isMasterHost(host);
 
-  // Block /sa in tenant domains
-  if (!master && pathname.startsWith("/sa")) {
+  // ✅ FIX: Block /sa SOLO si es "/sa" o "/sa/..."
+  // (Evita bloquear "/sales")
+  if (!master && (pathname === "/sa" || pathname.startsWith("/sa/"))) {
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/inventory";
     return NextResponse.redirect(url);
   }
 
