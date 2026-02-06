@@ -21,6 +21,11 @@ type Model = {
   name: string;
 };
 
+type VehicleType = {
+  id: string;
+  name: string;
+};
+
 // --- Helpers ---
 function safeDecode(v: string | null): string | null {
   if (!v) return null;
@@ -235,11 +240,13 @@ export default function VehicleCreatePage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
 
   // --- Form Data ---
   const [branchId, setBranchId] = useState("");
   const [brandId, setBrandId] = useState("");
   const [modelId, setModelId] = useState("");
+  const [vehicleTypeId, setVehicleTypeId] = useState("");
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -264,17 +271,20 @@ export default function VehicleCreatePage() {
     (async () => {
       setLoadingCatalogs(true);
       try {
-        const [b1, b2] = await Promise.all([
+        const [b1, b2, vt] = await Promise.all([
           fetchJson("/api/bff/branches"),
-          fetchJson("/api/bff/brands")
+          fetchJson("/api/bff/brands"),
+          fetchJson("/api/bff/vehicle-types").catch(() => [])
         ]);
         if (!alive) return;
 
         const branchesArr = Array.isArray(b1) ? b1 : b1?.data ?? [];
         const brandsArr = Array.isArray(b2) ? b2 : b2?.data ?? [];
+        const typesArr = Array.isArray(vt) ? vt : vt?.data ?? [];
 
         setBranches(branchesArr);
         setBrands(brandsArr);
+        setVehicleTypes(typesArr);
 
         // Pre-select if only one option or similar logic if desired? 
         // Logic from original:
@@ -343,6 +353,7 @@ export default function VehicleCreatePage() {
         branchId,
         brandId,
         modelId,
+        vehicleTypeId: vehicleTypeId || undefined,
         title: toStringOrUndefined(title),
         description: undefined, // Not in new design, maybe ignore or add later
         year: toIntOrUndefined(year),
@@ -363,6 +374,7 @@ export default function VehicleCreatePage() {
       setSaving(false);
     }
   }
+
 
   // --- Render ---
 
@@ -451,6 +463,20 @@ export default function VehicleCreatePage() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Tipo de Vehículo</label>
+                  <select
+                    className={selectClass}
+                    value={vehicleTypeId}
+                    onChange={e => setVehicleTypeId(e.target.value)}
+                  >
+                    <option value="">Seleccionar Tipo</option>
+                    {vehicleTypes.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

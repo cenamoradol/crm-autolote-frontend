@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { deleteLead, getLead, updateLead, type Lead, type LeadStatus } from "@/lib/leads";
 import { searchCustomers } from "@/lib/lookups";
+import LeadPreferenceCard from "@/components/leads/LeadPreferenceCard";
+
 
 // --- Icons ---
 function IconArrowLeft({ className }: { className?: string }) {
@@ -408,6 +410,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             </div>
+
+            {/* User Interest / Preferences */}
+            <LeadPreferenceCard leadId={id} />
+
 
             {/* Customer Link */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">

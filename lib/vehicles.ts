@@ -8,6 +8,7 @@ export type VehicleUpsertPayload = {
   branchId: string;
   brandId: string;
   modelId: string;
+  vehicleTypeId?: string;
 
   title?: string;
   description?: string;
@@ -46,6 +47,7 @@ export type Vehicle = {
 
   brandId: string;
   modelId: string;
+  vehicleTypeId?: string | null;
 
   title?: string | null;
   description?: string | null;
@@ -63,6 +65,7 @@ export type Vehicle = {
 
   brand?: Brand;
   model?: Model;
+  vehicleType?: { id: string; name: string };
   branch?: Branch;
   media?: VehicleMedia[];
 
@@ -100,6 +103,7 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     branchId: payload.branchId,
     brandId: payload.brandId,
     modelId: payload.modelId,
+    vehicleTypeId: payload.vehicleTypeId ?? undefined,
     title: payload.title ?? undefined,
     description: payload.description ?? undefined,
     year: payload.year ?? undefined,
@@ -125,6 +129,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     branchId: payload.branchId ?? undefined,
     brandId: payload.brandId ?? undefined,
     modelId: payload.modelId ?? undefined,
+    vehicleTypeId: payload.vehicleTypeId ?? undefined,
     title: payload.title ?? undefined,
     description: payload.description ?? undefined,
     year: payload.year ?? undefined,
@@ -143,6 +148,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     body: JSON.stringify(body),
   });
 }
+
 
 /**
  * DELETE en backend = ARCHIVE (status=ARCHIVED)

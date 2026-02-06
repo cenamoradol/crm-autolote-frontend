@@ -19,6 +19,11 @@ type Brand = {
   name: string;
 };
 
+type VehicleType = {
+  id: string;
+  name: string;
+};
+
 type Model = {
   id: string;
   name: string;
@@ -86,6 +91,7 @@ export default function VehicleForm({
   const [branches, setBranches] = useState<Branch[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
 
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -98,6 +104,7 @@ export default function VehicleForm({
   const [branchId, setBranchId] = useState(initial?.branchId ?? "");
   const [brandId, setBrandId] = useState(initial?.brandId ?? "");
   const [modelId, setModelId] = useState(initial?.modelId ?? "");
+  const [vehicleTypeId, setVehicleTypeId] = useState(initial?.vehicleTypeId ?? "");
 
   // ✅ title en lib suele ser string | undefined (no null)
   const [title, setTitle] = useState((initial?.title ?? "") as string);
@@ -129,16 +136,22 @@ export default function VehicleForm({
       setError(null);
 
       try {
-        const [b1, b2] = await Promise.all([fetchJson("/api/bff/branches"), fetchJson("/api/bff/brands")]);
+        const [b1, b2, vt] = await Promise.all([
+          fetchJson("/api/bff/branches"),
+          fetchJson("/api/bff/brands"),
+          fetchJson("/api/bff/vehicle-types").catch(() => []), // Fallback empty if not exists
+        ]);
 
         if (!alive) return;
 
         // soporta respuestas tipo array o {data:[]}
         const branchesArr: Branch[] = Array.isArray(b1) ? b1 : b1?.data ?? [];
         const brandsArr: Brand[] = Array.isArray(b2) ? b2 : b2?.data ?? [];
+        const typesArr: VehicleType[] = Array.isArray(vt) ? vt : vt?.data ?? [];
 
         setBranches(branchesArr);
         setBrands(brandsArr);
+        setVehicleTypes(typesArr);
 
         // defaults
         if (!branchId && branchesArr.length) setBranchId(branchesArr[0].id);
@@ -210,6 +223,7 @@ export default function VehicleForm({
       branchId,
       brandId,
       modelId,
+      vehicleTypeId: vehicleTypeId || undefined,
 
       // ✅ usamos undefined en lugar de null (para compatibilidad de tipos)
       title: toStringOrUndefined(title),
@@ -254,6 +268,18 @@ export default function VehicleForm({
         ) : (
           <>
             <div className="row g-3">
+              <div className="col-12 col-md-4">
+                <label className="form-label">Tipo de Vehículo</label>
+                <select className="form-select" value={vehicleTypeId} onChange={(e) => setVehicleTypeId(e.target.value)} disabled={savingFinal}>
+                  <option value="">Seleccione...</option>
+                  {vehicleTypes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="col-12 col-md-4">
                 <label className="form-label">Branch</label>
                 <select className="form-select" value={branchId} onChange={(e) => setBranchId(e.target.value)} disabled={savingFinal}>
@@ -431,6 +457,6 @@ export default function VehicleForm({
           </>
         )}
       </div>
-    </form>
+    </form >
   );
 }

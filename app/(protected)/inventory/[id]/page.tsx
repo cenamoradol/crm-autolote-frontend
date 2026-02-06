@@ -485,26 +485,30 @@ export default function VehicleEditPage() {
   const [mileage, setMileage] = useState("");
   const [vin, setVin] = useState("");
   const [description, setDescription] = useState("");
+  const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
 
   // Catalogs
   const [branches, setBranches] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
 
   // Load data
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [v, b1, b2] = await Promise.all([
+        const [v, b1, b2, vt] = await Promise.all([
           getVehicle(id),
           fetchJson("/api/bff/branches"),
-          fetchJson("/api/bff/brands")
+          fetchJson("/api/bff/brands"),
+          fetchJson("/api/bff/vehicle-types").catch(() => [])
         ]);
         setVehicle(v);
         setBranches(Array.isArray(b1) ? b1 : b1?.data ?? []);
         setBrands(Array.isArray(b2) ? b2 : b2?.data ?? []);
+        setVehicleTypes(Array.isArray(vt) ? vt : vt?.data ?? []);
 
         // Fill form
         if (v) {
@@ -517,6 +521,7 @@ export default function VehicleEditPage() {
           setMileage(v.mileage ? String(v.mileage) : "");
           setVin(v.vin || "");
           setDescription(v.description || "");
+          setVehicleTypeId(v.vehicleTypeId || "");
           setIsPublished(!!v.isPublished);
 
           // prefetch models
@@ -556,6 +561,7 @@ export default function VehicleEditPage() {
         mileage: toIntOrUndefined(mileage),
         vin: toStringOrUndefined(vin),
         description: toStringOrUndefined(description),
+        vehicleTypeId: vehicleTypeId || undefined,
         isPublished
       });
       alert("Guardado!");
@@ -663,6 +669,13 @@ export default function VehicleEditPage() {
             <div className={sectionClass}>
               <h2 className="text-lg font-bold text-gray-900 mb-6">Información General</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <div>
+                  <label className={labelClass}>Tipo de Vehículo</label>
+                  <select className={selectClass} value={vehicleTypeId} onChange={e => setVehicleTypeId(e.target.value)} disabled={isArchived}>
+                    <option value="">Seleccione...</option>
+                    {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
                 <div>
                   <label className={labelClass}>Marca</label>
                   <select className={selectClass} value={brandId} onChange={e => setBrandId(e.target.value)} disabled={isArchived}>

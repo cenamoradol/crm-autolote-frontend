@@ -68,19 +68,19 @@ function normalizeLead(raw: any): Lead | null {
 
     customer: raw?.customer
       ? {
-          id: raw.customer.id,
-          fullName: raw.customer.fullName ?? raw.customer.full_name ?? "(Sin nombre)",
-          phone: raw.customer.phone ?? null,
-          email: raw.customer.email ?? null
-        }
+        id: raw.customer.id,
+        fullName: raw.customer.fullName ?? raw.customer.full_name ?? "(Sin nombre)",
+        phone: raw.customer.phone ?? null,
+        email: raw.customer.email ?? null
+      }
       : null,
 
     assignedTo: raw?.assignedTo
       ? {
-          id: raw.assignedTo.id,
-          fullName: raw.assignedTo.fullName ?? raw.assignedTo.full_name ?? null,
-          email: raw.assignedTo.email
-        }
+        id: raw.assignedTo.id,
+        fullName: raw.assignedTo.fullName ?? raw.assignedTo.full_name ?? null,
+        email: raw.assignedTo.email
+      }
       : null,
 
     createdAt: raw?.createdAt ?? raw?.created_at ?? null,
@@ -200,3 +200,53 @@ export async function updateLead(id: string, body: LeadUpdateInput): Promise<Lea
 export async function deleteLead(id: string): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(`/leads/${id}`, { method: "DELETE" });
 }
+
+// --- Preferences ---
+
+export type LeadPreference = {
+  id: string;
+  leadId: string;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  yearFrom?: number | null;
+  yearTo?: number | null;
+
+  desiredBrandId?: string | null;
+  desiredModelId?: string | null;
+  vehicleTypeId?: string | null;
+
+  notes?: string | null;
+
+  desiredBrand?: { id: string; name: string } | null;
+  desiredModel?: { id: string; name: string } | null;
+  vehicleType?: { id: string; name: string } | null;
+};
+
+export type LeadPreferenceInput = {
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  yearFrom?: number | null;
+  yearTo?: number | null;
+  desiredBrandId?: string | null;
+  desiredModelId?: string | null;
+  vehicleTypeId?: string | null;
+  notes?: string | null;
+};
+
+export async function getLeadPreference(leadId: string): Promise<LeadPreference | null> {
+  try {
+    const raw = await apiFetch<any>(`/leads/${leadId}/preference`);
+    return raw ? raw : null;
+  } catch (e: any) {
+    if (e.status === 404 || e.message?.includes("NOT_FOUND")) return null;
+    throw e;
+  }
+}
+
+export async function upsertLeadPreference(leadId: string, body: LeadPreferenceInput): Promise<LeadPreference> {
+  return apiFetch<LeadPreference>(`/leads/${leadId}/preference`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
