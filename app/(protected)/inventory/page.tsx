@@ -27,6 +27,8 @@ const statusColors: Record<string, string> = {
   ARCHIVED: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300",
 };
 
+import { VehicleDetailsModal } from "@/components/inventory/VehicleDetailsModal";
+
 export default function InventoryPage() {
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -37,6 +39,9 @@ export default function InventoryPage() {
 
   const [status, setStatus] = useState<string>(sp.get("status") ?? "");
   const [published, setPublished] = useState<string>(sp.get("published") ?? "");
+
+  // Modal state
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
 
   const returnTo = useMemo(() => `${pathname}${sp.toString() ? `?${sp.toString()}` : ""}`, [pathname, sp]);
 
@@ -215,7 +220,11 @@ export default function InventoryPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {items.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                <tr
+                  key={v.id}
+                  onClick={() => setSelectedVehicleId(v.id)}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
@@ -251,6 +260,7 @@ export default function InventoryPage() {
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
                         href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Editar"
                       >
@@ -260,7 +270,8 @@ export default function InventoryPage() {
                         type="button"
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Archivar"
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          e.stopPropagation();
                           if (!confirm("¿Archivar este vehículo?")) return;
                           try {
                             await deleteVehicle(v.id);
@@ -301,7 +312,13 @@ export default function InventoryPage() {
             </div>
           </div>
         )}
+
       </div>
+
+      <VehicleDetailsModal
+        vehicleId={selectedVehicleId}
+        onClose={() => setSelectedVehicleId(null)}
+      />
     </div>
   );
 }

@@ -485,6 +485,9 @@ export default function VehicleEditPage() {
   const [mileage, setMileage] = useState("");
   const [vin, setVin] = useState("");
   const [description, setDescription] = useState("");
+  const [color, setColor] = useState("");
+  const [transmission, setTransmission] = useState("");
+  const [fuelType, setFuelType] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
 
@@ -521,6 +524,9 @@ export default function VehicleEditPage() {
           setMileage(v.mileage ? String(v.mileage) : "");
           setVin(v.vin || "");
           setDescription(v.description || "");
+          setColor(v.color || "");
+          setTransmission(v.transmission || "");
+          setFuelType(v.fuelType || "");
           setVehicleTypeId(v.vehicleTypeId || "");
           setIsPublished(!!v.isPublished);
 
@@ -561,6 +567,9 @@ export default function VehicleEditPage() {
         mileage: toIntOrUndefined(mileage),
         vin: toStringOrUndefined(vin),
         description: toStringOrUndefined(description),
+        color: toStringOrUndefined(color),
+        transmission: toStringOrUndefined(transmission),
+        fuelType: toStringOrUndefined(fuelType),
         vehicleTypeId: vehicleTypeId || undefined,
         isPublished
       });
@@ -717,6 +726,41 @@ export default function VehicleEditPage() {
                 <div>
                   <label className={labelClass}>Kilometraje</label>
                   <input className={inputClass} value={mileage} onChange={e => setMileage(e.target.value)} disabled={isArchived} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                <div>
+                  <label className={labelClass}>Color</label>
+                  <select className={selectClass} value={color} onChange={e => setColor(e.target.value)} disabled={isArchived}>
+                    <option value="">Seleccione...</option>
+                    <option value="Blanco">Blanco</option>
+                    <option value="Negro">Negro</option>
+                    <option value="Gris">Gris</option>
+                    <option value="Plata">Plata</option>
+                    <option value="Azul">Azul</option>
+                    <option value="Rojo">Rojo</option>
+                    {color && !["Blanco", "Negro", "Gris", "Plata", "Azul", "Rojo"].includes(color) && <option value={color}>{color}</option>}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Transmisión</label>
+                  <select className={selectClass} value={transmission} onChange={e => setTransmission(e.target.value)} disabled={isArchived}>
+                    <option value="">Seleccione...</option>
+                    <option value="Automática">Automática</option>
+                    <option value="Manual">Manual</option>
+                    <option value="CVT">CVT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Combustible</label>
+                  <select className={selectClass} value={fuelType} onChange={e => setFuelType(e.target.value)} disabled={isArchived}>
+                    <option value="">Seleccione...</option>
+                    <option value="Gasolina">Gasolina</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Híbrido">Híbrido</option>
+                    <option value="Eléctrico">Eléctrico</option>
+                  </select>
                 </div>
               </div>
 

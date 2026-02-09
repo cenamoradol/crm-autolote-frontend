@@ -73,11 +73,12 @@ function IconEdit({ className }: { className?: string }) {
 
 // Activity Types Config
 const TYPE_CONFIG: Record<string, { label: string, color: string, icon: any }> = {
-  CALL: { label: "CALL", color: "bg-blue-100 text-blue-800", icon: IconPhone },
+  CALL: { label: "LLAMADA", color: "bg-blue-100 text-blue-800", icon: IconPhone },
   WHATSAPP: { label: "WHATSAPP", color: "bg-green-100 text-green-800", icon: IconMessageCircle },
   EMAIL: { label: "EMAIL", color: "bg-cyan-100 text-cyan-800", icon: IconMail },
-  MEETING: { label: "MEETING", color: "bg-purple-100 text-purple-800", icon: IconUsers },
-  NOTE: { label: "NOTE", color: "bg-gray-100 text-gray-800", icon: IconStickyNote },
+  MEETING: { label: "REUNIÓN", color: "bg-purple-100 text-purple-800", icon: IconUsers },
+  NOTE: { label: "NOTA", color: "bg-gray-100 text-gray-800", icon: IconStickyNote },
+  SYSTEM: { label: "SISTEMA", color: "bg-red-100 text-red-800", icon: IconSystem },
 }
 
 function IconPhone({ className }: { className?: string }) {
@@ -95,6 +96,9 @@ function IconUsers({ className }: { className?: string }) {
 function IconStickyNote({ className }: { className?: string }) {
   return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className={className}><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" /><path d="M15 3v5h5" /></svg>
 }
+function IconSystem({ className }: { className?: string }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+}
 
 function safeDecode(v: string | null): string | null {
   if (!v) return null;
@@ -107,7 +111,7 @@ function safeDecode(v: string | null): string | null {
   }
 }
 
-const ACTIVITY_TYPES: ActivityType[] = ["CALL", "WHATSAPP", "EMAIL", "MEETING", "NOTE"];
+const ACTIVITY_TYPES: ActivityType[] = ["CALL", "WHATSAPP", "EMAIL", "MEETING", "NOTE", "SYSTEM"];
 
 function isActivityType(v: string): v is ActivityType {
   return (ACTIVITY_TYPES as readonly string[]).includes(v);

@@ -159,19 +159,19 @@ function CustomerSearchTW({
           ) : results.length === 0 ? (
             <div className="px-4 py-2 text-gray-500">No se encontraron clientes.</div>
           ) : (
-            results.map(c => (
+            results.map((c: any) => (
               <button
-                key={c.id}
+                key={c.value}
                 type="button"
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 flex flex-col"
                 onClick={() => {
-                  onChange({ id: c.id, name: c.fullName || c.phone || c.email });
+                  onChange({ id: c.value, name: c.label });
                   setOpen(false);
                   setQ("");
                 }}
               >
-                <span className="font-medium text-gray-900">{c.fullName || "Sin nombre"}</span>
-                <span className="text-xs text-gray-500">{c.email} · {c.phone}</span>
+                <span className="font-medium text-gray-900">{c.label}</span>
+                {c.sublabel && <span className="text-xs text-gray-500">{c.sublabel}</span>}
               </button>
             ))
           )}
@@ -353,7 +353,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="col-span-1 md:col-span-2"> // Name full width
+                <div className="col-span-1 md:col-span-2">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">NOMBRE COMPLETO</label>
                   <input
                     className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 text-sm bg-gray-50"

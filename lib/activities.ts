@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 
-export type ActivityType = "CALL" | "WHATSAPP" | "EMAIL" | "MEETING" | "NOTE";
+export type ActivityType = "CALL" | "WHATSAPP" | "EMAIL" | "MEETING" | "NOTE" | "SYSTEM";
 
 export type Activity = {
   id: string;

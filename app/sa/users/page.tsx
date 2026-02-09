@@ -11,6 +11,7 @@ type User = {
   fullName: string | null;
   isSuperAdmin: boolean;
   isActive: boolean;
+  store: { id: string; name: string; slug: string } | null;
 };
 
 type Store = {
@@ -41,6 +42,7 @@ const ROLE_OPTIONS = [
 export default function SaUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [filterStoreId, setFilterStoreId] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
@@ -87,13 +89,17 @@ export default function SaUsersPage() {
     setLoading(true);
     setErr(null);
     try {
-      const [u, s] = await Promise.all([
-        apiFetch<User[]>("/sa/users"),
-        apiFetch<Store[]>("/sa/stores")
-      ]);
-
-      setUsers(u);
+      // First load stores to populate filters/selects
+      const s = await apiFetch<Store[]>("/sa/stores");
       setStores(s);
+
+      // Then load users with filter
+      let url = "/sa/users";
+      if (filterStoreId) {
+        url += `?storeId=${filterStoreId}`;
+      }
+      const u = await apiFetch<User[]>(url);
+      setUsers(u);
 
       // defaults amigables
       if (!assignStoreId && s.length) setAssignStoreId(s[0].id);
@@ -108,7 +114,7 @@ export default function SaUsersPage() {
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filterStoreId]);
 
   // Sincronizar roles cuando cambie la selección de store/user en el formulario de asignación
   useEffect(() => {
@@ -439,17 +445,31 @@ export default function SaUsersPage() {
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Directorio de Usuarios</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Total: <span className="font-bold">{users.length}</span> registros.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={loadAll}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                  </svg>
-                  {loading ? "Actualizando..." : "Refrescar"}
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    className="block rounded-lg border-slate-200 bg-slate-50 py-1.5 pl-3 pr-8 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-700 dark:text-white"
+                    value={filterStoreId}
+                    onChange={(e) => setFilterStoreId(e.target.value)}
+                  >
+                    <option value="">Todas las Stores</option>
+                    {stores.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => loadAll()}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 transition-all hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    {loading ? "Actualizando..." : "Refrescar"}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -459,6 +479,7 @@ export default function SaUsersPage() {
                   <tr>
                     <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Email</th>
                     <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre</th>
+                    <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Store</th>
                     <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">SA</th>
                     <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Estado</th>
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 whitespace-nowrap"></th>
@@ -472,6 +493,16 @@ export default function SaUsersPage() {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="text-sm text-slate-600 dark:text-slate-300 font-medium uppercase">{u.fullName ?? "-"}</div>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {u.store ? (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-800 dark:text-white">{u.store.name}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{u.store.slug}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Sin asignar</span>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-center">
                         {u.isSuperAdmin ? (
@@ -502,7 +533,7 @@ export default function SaUsersPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center">
+                      <td colSpan={6} className="py-12 text-center">
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">No hay usuarios registrados.</p>
                       </td>
                     </tr>
