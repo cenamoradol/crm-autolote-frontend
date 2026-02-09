@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useState, useMemo, useEffect, use } from "react";
 import { getCustomer, updateCustomer, deleteCustomer, type Customer, type CustomerUpdateInput } from "@/lib/customers";
+import { useUser } from "@/components/providers/UserProvider";
 
 // Icons
 function IconArrowLeft({ className }: { className?: string }) {
@@ -45,6 +46,9 @@ function IconUser({ className }: { className?: string }) {
 }
 
 export default function CustomerEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = useUser();
+  const canDelete = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const returnTo = "/customers";
@@ -138,13 +142,15 @@ export default function CustomerEditPage({ params }: { params: Promise<{ id: str
             <h1 className="text-2xl font-bold text-gray-900">Editar Cliente</h1>
 
             <div className="flex gap-2">
-              <button
-                onClick={handleDelete}
-                className="inline-flex items-center px-3 py-2 border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors text-sm font-medium"
-              >
-                <IconTrash className="w-4 h-4 mr-2" />
-                Eliminar
-              </button>
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  className="inline-flex items-center px-3 py-2 border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors text-sm font-medium"
+                >
+                  <IconTrash className="w-4 h-4 mr-2" />
+                  Eliminar
+                </button>
+              )}
               <Link
                 href={returnTo}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-md transition-colors text-sm font-medium"

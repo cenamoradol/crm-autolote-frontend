@@ -28,8 +28,12 @@ const statusColors: Record<string, string> = {
 };
 
 import { VehicleDetailsModal } from "@/components/inventory/VehicleDetailsModal";
+import { useUser } from "@/components/providers/UserProvider";
 
 export default function InventoryPage() {
+  const user = useUser();
+  const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+
   const pathname = usePathname();
   const sp = useSearchParams();
 
@@ -275,23 +279,25 @@ export default function InventoryPage() {
                       >
                         <span className="material-symbols-outlined text-[20px]">edit</span>
                       </Link>
-                      <button
-                        type="button"
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Archivar"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!confirm("¿Archivar este vehículo?")) return;
-                          try {
-                            await deleteVehicle(v.id);
-                            await load();
-                          } catch (e: any) {
-                            setErr(e?.message || "No se pudo archivar");
-                          }
-                        }}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">archive</span>
-                      </button>
+                      {canArchive && (
+                        <button
+                          type="button"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Archivar"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!confirm("¿Archivar este vehículo?")) return;
+                            try {
+                              await deleteVehicle(v.id);
+                              await load();
+                            } catch (e: any) {
+                              setErr(e?.message || "No se pudo archivar");
+                            }
+                          }}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">archive</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -22,36 +22,40 @@ export default function MasterShell({
         title="SuperAdmin"
         center={
           <div className="flex gap-1 h-full items-center">
-            <Link
-              href="/sa"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-            >
-              Inicio
-            </Link>
-            <Link
-              href="/sa/stores"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-            >
-              Stores
-            </Link>
-            <Link
-              href="/sa/users"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-            >
-              Users
-            </Link>
-            <Link
-              href="/sa/vehicle-types"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-            >
-              Tipos de Vehículo
-            </Link>
-            <Link
-              href="/sa/brands"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-            >
-              Marcas y Modelos
-            </Link>
+            {isSA && (
+              <>
+                <Link
+                  href="/sa"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                >
+                  Inicio
+                </Link>
+                <Link
+                  href="/sa/stores"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                >
+                  Stores
+                </Link>
+                <Link
+                  href="/sa/users"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                >
+                  Users
+                </Link>
+                <Link
+                  href="/sa/vehicle-types"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                >
+                  Tipos de Vehículo
+                </Link>
+                <Link
+                  href="/sa/brands"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                >
+                  Marcas y Modelos
+                </Link>
+              </>
+            )}
 
 
             {supportStoreId && (
