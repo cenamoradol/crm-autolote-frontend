@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { Navbar } from "@/components/ui/Navbar";
+import { SessionUser } from "@/lib/server/getServerSession";
 
 export default function MasterShell({
   children,
   supportStoreId,
+  session,
 }: {
   children: React.ReactNode;
   supportStoreId?: string | null;
+  session: SessionUser;
 }) {
+  const isSA = session.isSuperAdmin;
+  const roles = session.roles;
+  const isAdmin = roles.includes("admin");
+  const isSupervisor = roles.includes("supervisor");
+  const isSeller = roles.includes("seller");
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Navbar
@@ -38,6 +46,12 @@ export default function MasterShell({
             >
               Tipos de Vehículo
             </Link>
+            <Link
+              href="/sa/brands"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+            >
+              Marcas y Modelos
+            </Link>
 
 
             {supportStoreId && (
@@ -49,30 +63,38 @@ export default function MasterShell({
                 >
                   Inventarios
                 </Link>
-                <Link
-                  href="/sales"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Ventas
-                </Link>
+
+                {(isSA || isAdmin || isSupervisor) && (
+                  <Link
+                    href="/sales"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                  >
+                    Ventas
+                  </Link>
+                )}
+
                 <Link
                   href="/activities"
                   className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
                 >
                   Actividades
                 </Link>
+
                 <Link
                   href="/customers"
                   className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
                 >
                   Clientes
                 </Link>
-                <Link
-                  href="/leads"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Leads
-                </Link>
+
+                {(isSA || isAdmin || isSupervisor) && (
+                  <Link
+                    href="/leads"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                  >
+                    Leads
+                  </Link>
+                )}
               </>
             )}
           </div>

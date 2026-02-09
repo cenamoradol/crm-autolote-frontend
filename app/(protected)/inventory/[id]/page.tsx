@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getVehicle, updateVehicle, type Vehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import { getReservationByVehicle, type Reservation } from "@/lib/reservations";
+import { useUser } from "@/components/providers/UserProvider";
 
 // --- Icons ---
 function IconArrowLeft({ className }: { className?: string }) {
@@ -250,15 +251,18 @@ function ReservationCard({ vehicleId, status }: { vehicleId: string; status: str
 }
 
 function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale: any; onSaleRecorded: () => void }) {
+  const user = useUser();
   const [mode, setMode] = useState<"view" | "create">("view");
   const [loading, setLoading] = useState(false);
 
   // Form state
   const [customer, setCustomer] = useState<any>(null);
+  const [seller, setSeller] = useState<any>(null);
   const [soldPrice, setSoldPrice] = useState("");
   const [notes, setNotes] = useState("");
 
   const isSold = !!sale;
+  const canManageSales = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
 
   async function handleSale() {
     if (!soldPrice) return alert("Precio es requerido");
@@ -269,7 +273,8 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vehicleId,
-          customerId: customer?.value, // simple check, ignoring lead for brevity as per "works with what we have"
+          customerId: customer?.value,
+          soldByUserId: seller?.value,
           soldPrice: soldPrice.replace(/[^0-9]/g, ""),
           notes
         })
@@ -296,6 +301,10 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
             <span className="text-gray-500">Precio Venta:</span>
             <span className="font-bold text-gray-900">{sale.soldPrice || "-"}</span>
           </div>
+          <div className="flex justify-between border-b pb-2">
+            <span className="text-gray-500">Vendido por:</span>
+            <span className="text-gray-900 font-medium">{sale.soldBy?.fullName || sale.soldBy?.email || "-"}</span>
+          </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Fecha:</span>
             <span className="text-gray-900">{new Date(sale.soldAt).toLocaleDateString()}</span>
@@ -310,6 +319,8 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
       </div>
     )
   }
+
+  if (!canManageSales) return null;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
@@ -328,7 +339,21 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
       ) : (
         <div className="space-y-4">
           <SearchSelectTW
-            label="Cliente"
+            label="Vendedor (opcional)"
+            value={seller}
+            onChange={setSeller}
+            placeholder="Buscar vendedor..."
+            loadOptions={async (q) => {
+              const res = await fetchJson(`/api/bff/users?q=${encodeURIComponent(q)}&page=1&pageSize=5`);
+              return (res?.items || []).map((u: any) => ({
+                value: u.id,
+                label: u.fullName || u.email,
+                sublabel: u.email
+              }));
+            }}
+          />
+          <SearchSelectTW
+            label="Cliente (opcional)"
             value={customer}
             onChange={setCustomer}
             loadOptions={async (q) => {
@@ -592,6 +617,9 @@ export default function VehicleEditPage() {
     }
   }
 
+  const user = useUser();
+  const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando vehículo...</div>;
   if (!vehicle) return <div className="p-8 text-center">Vehículo no encontrado. <Link href="/inventory" className="text-blue-600">Volver</Link></div>;
 
@@ -646,10 +674,12 @@ export default function VehicleEditPage() {
                 </button>
               </div>
 
-              <button onClick={handleArchive} disabled={isArchived} className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50">
-                <IconArchive className="w-4 h-4 mr-2 text-red-500" />
-                Archivar
-              </button>
+              {canArchive && (
+                <button onClick={handleArchive} disabled={isArchived} className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50">
+                  <IconArchive className="w-4 h-4 mr-2 text-red-500" />
+                  Archivar
+                </button>
+              )}
 
               <Link href={returnTo} className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                 <IconArrowLeft className="w-4 h-4 mr-2" />

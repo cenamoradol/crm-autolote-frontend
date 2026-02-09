@@ -160,6 +160,7 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             <DetailRow label="VIN / Serie" value={vehicle.vin} icon="tag" isMono />
                             <DetailRow label="Marca" value={vehicle.brand?.name} icon="branding_watermark" />
                             <DetailRow label="Modelo" value={vehicle.model?.name} icon="category" />
+                            <DetailRow label="Tipo" value={vehicle.vehicleType?.name} icon="directions_car" />
                             <DetailRow label="Año" value={vehicle.year} icon="calendar_today" />
                             <DetailRow label="Kilometraje" value={vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null} icon="speed" />
                             <DetailRow label="Color" value={vehicle.color} icon="palette" />

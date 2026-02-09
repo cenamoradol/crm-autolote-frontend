@@ -39,6 +39,7 @@ export default function InventoryPage() {
 
   const [status, setStatus] = useState<string>(sp.get("status") ?? "");
   const [published, setPublished] = useState<string>(sp.get("published") ?? "");
+  const [search, setSearch] = useState<string>(sp.get("search") ?? "");
 
   // Modal state
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
@@ -52,7 +53,8 @@ export default function InventoryPage() {
     try {
       const data = await listVehicles({
         status: (status as VehicleStatus) || undefined,
-        published: parsePublished(published)
+        published: parsePublished(published),
+        search: search || undefined
       });
       setItems(data);
     } catch (e: any) {
@@ -65,6 +67,7 @@ export default function InventoryPage() {
   useEffect(() => {
     setStatus(sp.get("status") ?? "");
     setPublished(sp.get("published") ?? "");
+    setSearch(sp.get("search") ?? "");
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp.toString()]);
@@ -73,6 +76,9 @@ export default function InventoryPage() {
     if (e) e.preventDefault();
 
     const qs = new URLSearchParams(sp.toString());
+
+    if (search) qs.set("search", search);
+    else qs.delete("search");
 
     if (status) qs.set("status", status);
     else qs.delete("status");
@@ -95,12 +101,14 @@ export default function InventoryPage() {
     const qs = new URLSearchParams(sp.toString());
     qs.delete("status");
     qs.delete("published");
+    qs.delete("search");
 
     const nextUrl = `${pathname}${qs.toString() ? `?${qs.toString()}` : ""}`;
     window.history.pushState({}, "", nextUrl);
 
     setStatus("");
     setPublished("");
+    setSearch("");
     // load() will be called by useEffect since URL changed? Actually no, standard Next.js behavior might not trigger useEffect if we just pushState.
     // The original code called load() explicitly.
     setTimeout(load, 0);
@@ -156,10 +164,11 @@ export default function InventoryPage() {
                 <span className="material-symbols-outlined text-slate-400 text-[20px]">directions_car</span>
               </span>
               <input
-                disabled
                 type="text"
-                placeholder="Buscar por modelo o ID... (Próximamente)"
-                className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-shadow cursor-not-allowed opacity-60"
+                placeholder="Buscar por marca, modelo o ID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-shadow"
               />
             </div>
           </div>

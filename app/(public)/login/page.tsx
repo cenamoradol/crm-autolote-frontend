@@ -6,10 +6,12 @@ type Context = { mode: "master" | "tenant" | "unknown"; store?: { name: string }
 
 export default function LoginPage() {
   const [ctx, setCtx] = useState<Context | null>(null);
+  const [mode, setMode] = useState<"login" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/context", { cache: "no-store" })
@@ -21,24 +23,48 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+    setMsg(null);
     setLoading(true);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.message || data?.error || "Login failed");
+    if (mode === "login") {
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
 
-      const mode = data?.context?.mode as string | undefined;
-      if (mode === "master") window.location.href = "/sa";
-      else window.location.href = "/inventory";
-    } catch (e: any) {
-      setErr(e?.message || "Error");
-    } finally {
-      setLoading(false);
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.message || data?.error || "Login failed");
+
+        const mode = data?.context?.mode as string | undefined;
+        if (mode === "master") window.location.href = "/sa";
+        else window.location.href = "/inventory";
+      } catch (e: any) {
+        setErr(e?.message || "Error");
+        setLoading(false);
+      }
+    } else {
+      try {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.message || data?.error || "Error");
+
+        setMsg(data.message);
+        // For development: log the token in console if returned
+        if (data.mockToken) {
+          console.log("MOCK RESET LINK:", `${window.location.origin}/reset-password?token=${data.mockToken}`);
+        }
+      } catch (e: any) {
+        setErr(e?.message || "Error");
+      } finally {
+        setLoading(false);
+      }
     }
   }
 
@@ -67,12 +93,18 @@ export default function LoginPage() {
           <div className="pt-10 pb-4 text-center px-8">
             <div className="flex justify-center mb-6">
               <div className="size-16 rounded-full bg-blue-50 flex items-center justify-center">
-                <span className="material-symbols-outlined text-blue-600 text-3xl">directions_car</span>
+                <span className="material-symbols-outlined text-blue-600 text-3xl">
+                  {mode === "login" ? "directions_car" : "key"}
+                </span>
               </div>
             </div>
-            <h1 className="text-slate-900 dark:text-white text-2xl font-bold tracking-tight mb-2">Iniciar sesión</h1>
+            <h1 className="text-slate-900 dark:text-white text-2xl font-bold tracking-tight mb-2">
+              {mode === "login" ? "Iniciar sesión" : "Recuperar cuenta"}
+            </h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              Accede al panel de control de tu concesionario
+              {mode === "login"
+                ? "Accede al panel de control de tu concesionario"
+                : "Ingresa tu correo para recibir un enlace de recuperación"}
             </p>
           </div>
 
@@ -93,8 +125,21 @@ export default function LoginPage() {
                 <div className="flex gap-3 items-start">
                   <span className="material-symbols-outlined text-red-600 mt-0.5">error</span>
                   <div className="flex flex-col">
-                    <p className="text-red-700 text-sm font-bold leading-tight">Error de acceso</p>
+                    <p className="text-red-700 text-sm font-bold leading-tight">Error</p>
                     <p className="text-red-600 text-xs font-normal mt-0.5">{err}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {msg && (
+              <div className="mb-6 rounded-lg border border-green-100 bg-green-50 p-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex gap-3 items-start">
+                  <span className="material-symbols-outlined text-green-600 mt-0.5">check_circle</span>
+                  <div className="flex flex-col">
+                    <p className="text-green-700 text-sm font-bold leading-tight">Éxito</p>
+                    <p className="text-green-600 text-xs font-normal mt-0.5">{msg}</p>
                   </div>
                 </div>
               </div>
@@ -122,44 +167,65 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="material-symbols-outlined text-slate-400 text-[20px]">lock</span>
+              {mode === "login" && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-slate-400 text-[20px]">lock</span>
+                    </div>
+                    <input
+                      className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-shadow"
+                      id="password"
+                      name="password"
+                      placeholder="••••••••"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                  <input
-                    className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-shadow"
-                    id="password"
-                    name="password"
-                    placeholder="••••••••"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center">
-                  <input
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                  />
-                  <label className="ml-2 block text-xs text-slate-600 dark:text-slate-400 cursor-pointer" htmlFor="remember-me">
-                    Recordarme
-                  </label>
-                </div>
-                <div className="text-xs">
-                  <a className="font-medium text-blue-600 hover:text-blue-500" href="#">
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
+                {mode === "login" ? (
+                  <>
+                    <div className="flex items-center">
+                      <input
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                        id="remember-me"
+                        name="remember-me"
+                        type="checkbox"
+                      />
+                      <label className="ml-2 block text-xs text-slate-600 dark:text-slate-400 cursor-pointer" htmlFor="remember-me">
+                        Recordarme
+                      </label>
+                    </div>
+                    <div className="text-xs">
+                      <button
+                        type="button"
+                        onClick={() => { setMode("forgot"); setErr(null); setMsg(null); }}
+                        className="font-medium text-blue-600 hover:text-blue-500"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs">
+                    <button
+                      type="button"
+                      onClick={() => { setMode("login"); setErr(null); setMsg(null); }}
+                      className="font-medium text-blue-600 hover:text-blue-500 flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-sm">arrow_back</span>
+                      Volver al inicio de sesión
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button
@@ -167,7 +233,7 @@ export default function LoginPage() {
                 className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-6 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 type="submit"
               >
-                {loading ? "Ingresando..." : "Entrar"}
+                {loading ? "Procesando..." : (mode === "login" ? "Entrar" : "Enviar enlace")}
               </button>
             </form>
 
@@ -201,4 +267,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
