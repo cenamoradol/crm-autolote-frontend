@@ -248,7 +248,16 @@ export default function InventoryPage() {
                     {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{v.year ?? "-"}</td>
-                  <td className="px-6 py-4 text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
+                      {v.status === 'SOLD' && (v.soldPrice || v.sale?.soldPrice) ? (
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">
+                          Vendido: {money(v.soldPrice || v.sale?.soldPrice)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
                   <td className="px-6 py-4">
                     {v.status ? (
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[v.status] || "bg-gray-100 text-gray-800"}`}>

@@ -344,7 +344,7 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
             onChange={setSeller}
             placeholder="Buscar vendedor..."
             loadOptions={async (q) => {
-              const res = await fetchJson(`/api/bff/users?q=${encodeURIComponent(q)}&page=1&pageSize=5`);
+              const res = await fetchJson(`/api/bff/store-settings/members?q=${encodeURIComponent(q)}`);
               return (res?.items || []).map((u: any) => ({
                 value: u.id,
                 label: u.fullName || u.email,

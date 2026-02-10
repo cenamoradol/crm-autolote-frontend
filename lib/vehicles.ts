@@ -70,7 +70,8 @@ export type Vehicle = {
   media?: VehicleMedia[];
 
   reservation?: any;
-  sale?: any;
+  sale?: { soldPrice?: string | number | null;[key: string]: any } | null;
+  soldPrice?: string | number | null;
 };
 
 function buildQuery(params: Record<string, any>) {

@@ -487,7 +487,7 @@ export default function SaUsersPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700 dark:bg-slate-800">
                   {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <tr key={u.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!u.isActive ? "opacity-50 grayscale bg-slate-50 dark:bg-slate-900/50" : ""}`}>
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="text-sm font-bold text-slate-900 dark:text-indigo-400 uppercase tracking-tight">{u.email}</div>
                       </td>
@@ -496,9 +496,33 @@ export default function SaUsersPage() {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         {u.store ? (
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-800 dark:text-white">{u.store.name}</span>
-                            <span className="text-[10px] text-slate-500 font-mono">{u.store.slug}</span>
+                          <div className="flex items-center justify-between group">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-slate-800 dark:text-white">{u.store.name}</span>
+                              <span className="text-[10px] text-slate-500 font-mono">{u.store.slug}</span>
+                            </div>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm(`¿Desvincular a ${u.email} de la tienda ${u.store!.name}?`)) return;
+                                try {
+                                  setLoading(true);
+                                  await apiFetch(`/sa/stores/${u.store!.id}/members/${u.id}`, { method: "DELETE" });
+                                  setOk("Usuario desvinculado de la tienda ✅");
+                                  await loadAll();
+                                } catch (err: any) {
+                                  setErr(err.message || "Error al desvincular usuario");
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-all"
+                              title="Desvincular de Store"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                                <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v12.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2z" clipRule="evenodd" />
+                              </svg>
+                            </button>
                           </div>
                         ) : (
                           <span className="text-xs text-slate-400 italic">Sin asignar</span>
@@ -521,12 +545,34 @@ export default function SaUsersPage() {
                           {u.isActive ? "Activo" : "Suspendido"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+                      <td className="whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium flex justify-end gap-2">
                         <button
                           onClick={() => openEdit(u)}
                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-bold uppercase text-[10px] tracking-widest transition-colors"
                         >
                           Gestionar
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!confirm(`¿ELIMINAR PERMANENTEMENTE al usuario ${u.email}? Esta acción es irreversible.`)) return;
+                            try {
+                              setLoading(true);
+                              await apiFetch(`/sa/users/${u.id}`, { method: "DELETE" });
+                              setOk("Usuario eliminado permanentemente ✅");
+                              await loadAll();
+                            } catch (err: any) {
+                              setErr(err.message || "Error eliminando usuario");
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 transition-colors"
+                          title="Eliminar permanentemente"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
