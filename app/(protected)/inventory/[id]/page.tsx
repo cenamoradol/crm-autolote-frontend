@@ -862,7 +862,13 @@ export default function VehicleEditPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Días en inventario</span>
                   <span className="font-medium text-gray-900">
-                    {vehicle.createdAt ? Math.floor((Date.now() - new Date(vehicle.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0} días
+                    {(() => {
+                      if (!vehicle.createdAt) return "0";
+                      const start = new Date(vehicle.createdAt).getTime();
+                      const end = vehicle.sale?.soldAt ? new Date(vehicle.sale.soldAt).getTime() : Date.now();
+                      const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+                      return Math.max(0, diffDays);
+                    })()} días
                   </span>
                 </div>
                 <div className="flex justify-between">
