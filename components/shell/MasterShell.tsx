@@ -68,7 +68,7 @@ export default function MasterShell({
                   Inventarios
                 </Link>
 
-                {(isSA || isAdmin || isSupervisor) && (
+                {(isSA || isAdmin) && (
                   <Link
                     href="/sales"
                     className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
@@ -77,19 +77,23 @@ export default function MasterShell({
                   </Link>
                 )}
 
-                <Link
-                  href="/activities"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Actividades
-                </Link>
+                {(isSA || isAdmin || isSupervisor) && (
+                  <Link
+                    href="/activities"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                  >
+                    Actividades
+                  </Link>
+                )}
 
-                <Link
-                  href="/customers"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Clientes
-                </Link>
+                {(isSA || isAdmin || isSupervisor) && (
+                  <Link
+                    href="/customers"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                  >
+                    Clientes
+                  </Link>
+                )}
 
                 {(isSA || isAdmin || isSupervisor) && (
                   <Link

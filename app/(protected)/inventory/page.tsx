@@ -32,7 +32,9 @@ import { useUser } from "@/components/providers/UserProvider";
 
 export default function InventoryPage() {
   const user = useUser();
+  const isSeller = user.roles.includes("seller");
   const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const canEdit = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
 
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -141,13 +143,15 @@ export default function InventoryPage() {
               <span className={`material-symbols-outlined text-[20px] ${loading ? 'animate-spin' : ''}`}>refresh</span>
               Refrescar
             </button>
-            <Link
-              href={`/inventory/new?returnTo=${encodeURIComponent(returnTo)}`}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md"
-            >
-              <span className="material-symbols-outlined text-[20px]">add</span>
-              Crear Vehículo
-            </Link>
+            {canEdit && (
+              <Link
+                href={`/inventory/new?returnTo=${encodeURIComponent(returnTo)}`}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md"
+              >
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                Crear Vehículo
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -282,14 +286,16 @@ export default function InventoryPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link
-                        href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                      </Link>
+                      {canEdit && (
+                        <Link
+                          href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">edit</span>
+                        </Link>
+                      )}
                       {canArchive && (
                         <button
                           type="button"

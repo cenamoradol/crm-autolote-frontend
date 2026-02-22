@@ -18,9 +18,9 @@ export default function TenantShell({
   const isSeller = roles.includes("seller");
 
   // Definir permisos
-  const canSeeSales = isSA || isAdmin || isSupervisor;
-  const canSeeActivities = isSA || isAdmin || isSupervisor || isSeller;
-  const canSeeCustomers = isSA || isAdmin || isSupervisor || isSeller;
+  const canSeeSales = isSA || isAdmin;
+  const canSeeActivities = isSA || isAdmin || isSupervisor;
+  const canSeeCustomers = isSA || isAdmin || isSupervisor;
   const canSeeLeads = isSA || isAdmin || isSupervisor;
 
   return (

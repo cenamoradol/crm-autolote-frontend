@@ -631,6 +631,7 @@ export default function VehicleEditPage() {
 
   const user = useUser();
   const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const canEdit = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
 
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando vehículo...</div>;
   if (!vehicle) return <div className="p-8 text-center">Vehículo no encontrado. <Link href="/inventory" className="text-blue-600">Volver</Link></div>;
@@ -676,15 +677,17 @@ export default function VehicleEditPage() {
 
             <div className="flex items-center gap-3">
               {/* Publicado Switch */}
-              <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 mr-2">
-                <span className="text-sm text-gray-600 mr-2">Publicado</span>
-                <button
-                  onClick={() => !isArchived && setIsPublished(!isPublished)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublished ? "bg-blue-600" : "bg-gray-300"} ${isArchived ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isPublished ? "translate-x-5" : "translate-x-1"}`} />
-                </button>
-              </div>
+              {canEdit && (
+                <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 mr-2">
+                  <span className="text-sm text-gray-600 mr-2">Publicado</span>
+                  <button
+                    onClick={() => !isArchived && setIsPublished(!isPublished)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublished ? "bg-blue-600" : "bg-gray-300"} ${isArchived ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isPublished ? "translate-x-5" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              )}
 
               {canArchive && (
                 <button onClick={handleArchive} disabled={isArchived} className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50">
@@ -698,13 +701,15 @@ export default function VehicleEditPage() {
                 Volver
               </Link>
 
-              <button
-                onClick={handleSave}
-                disabled={saving || isArchived}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
-              >
-                {saving ? "Guardando..." : "Guardar Cambios"}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving || isArchived}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
+                >
+                  {saving ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -722,21 +727,21 @@ export default function VehicleEditPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Tipo de Vehículo</label>
-                  <select className={selectClass} value={vehicleTypeId} onChange={e => setVehicleTypeId(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={vehicleTypeId} onChange={e => setVehicleTypeId(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelClass}>Marca</label>
-                  <select className={selectClass} value={brandId} onChange={e => setBrandId(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={brandId} onChange={e => setBrandId(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelClass}>Modelo</label>
-                  <select className={selectClass} value={modelId} onChange={e => setModelId(e.target.value)} disabled={isArchived || !brandId}>
+                  <select className={selectClass} value={modelId} onChange={e => setModelId(e.target.value)} disabled={isArchived || !brandId || !canEdit}>
                     <option value="">Seleccione...</option>
                     {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
@@ -746,7 +751,7 @@ export default function VehicleEditPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Año</label>
-                  <select className={selectClass} value={year} onChange={e => setYear(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={year} onChange={e => setYear(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     {Array.from({ length: 30 }).map((_, i) => {
                       const y = new Date().getFullYear() + 1 - i;
@@ -756,25 +761,25 @@ export default function VehicleEditPage() {
                 </div>
                 <div>
                   <label className={labelClass}>VIN / Chasis</label>
-                  <input className={inputClass} value={vin} onChange={e => setVin(e.target.value)} disabled={isArchived} />
+                  <input className={inputClass} value={vin} onChange={e => setVin(e.target.value)} disabled={isArchived || !canEdit} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Precio (USD)</label>
-                  <input className={inputClass} value={price} onChange={e => setPrice(e.target.value)} disabled={isArchived} />
+                  <input className={inputClass} value={price} onChange={e => setPrice(e.target.value)} disabled={isArchived || !canEdit} />
                 </div>
                 <div>
                   <label className={labelClass}>Kilometraje</label>
-                  <input className={inputClass} value={mileage} onChange={e => setMileage(e.target.value)} disabled={isArchived} />
+                  <input className={inputClass} value={mileage} onChange={e => setMileage(e.target.value)} disabled={isArchived || !canEdit} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Color</label>
-                  <select className={selectClass} value={color} onChange={e => setColor(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={color} onChange={e => setColor(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     <option value="Blanco">Blanco</option>
                     <option value="Negro">Negro</option>
@@ -787,7 +792,7 @@ export default function VehicleEditPage() {
                 </div>
                 <div>
                   <label className={labelClass}>Transmisión</label>
-                  <select className={selectClass} value={transmission} onChange={e => setTransmission(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={transmission} onChange={e => setTransmission(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     <option value="Automática">Automática</option>
                     <option value="Manual">Manual</option>
@@ -796,7 +801,7 @@ export default function VehicleEditPage() {
                 </div>
                 <div>
                   <label className={labelClass}>Combustible</label>
-                  <select className={selectClass} value={fuelType} onChange={e => setFuelType(e.target.value)} disabled={isArchived}>
+                  <select className={selectClass} value={fuelType} onChange={e => setFuelType(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
                     <option value="Gasolina">Gasolina</option>
                     <option value="Diesel">Diesel</option>
@@ -818,7 +823,7 @@ export default function VehicleEditPage() {
                       }
                       setEngineSize(val);
                     }}
-                    disabled={isArchived}
+                    disabled={isArchived || !canEdit}
                     placeholder="Ej: 2.0"
                   />
                   {engineSizeError && <p className="text-red-500 text-xs mt-1">{engineSizeError}</p>}
@@ -827,7 +832,7 @@ export default function VehicleEditPage() {
 
               <div className="mb-4">
                 <label className={labelClass}>Descripción</label>
-                <textarea className={inputClass} rows={4} value={description} onChange={e => setDescription(e.target.value)} disabled={isArchived} />
+                <textarea className={inputClass} rows={4} value={description} onChange={e => setDescription(e.target.value)} disabled={isArchived || !canEdit} />
               </div>
             </div>
 
