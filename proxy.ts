@@ -25,8 +25,9 @@ function isStoreScoped(pathname: string) {
   return STORE_SCOPED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-// ✅ middleware()
-export function middleware(req: NextRequest) {
+// ✅ proxy()
+export function proxy(req: NextRequest) {
+
 
   const { pathname } = req.nextUrl;
 
