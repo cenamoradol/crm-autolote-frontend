@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 import { COOKIE_ACCESS, COOKIE_SA_STORE } from "./lib/cookies";
 import { normalizeHost, isMasterHost } from "./lib/host";
 
-const PUBLIC_PATHS = ["/login", "/domain-not-found"];
+const PUBLIC_PATHS = ["/login", "/domain-not-found", "/reset-password"];
+
 
 const STORE_SCOPED_PATHS = [
   "/dashboard",
@@ -24,8 +25,9 @@ function isStoreScoped(pathname: string) {
   return STORE_SCOPED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-// ✅ middleware() ahora es proxy()
-export function proxy(req: NextRequest) {
+// ✅ middleware()
+export function middleware(req: NextRequest) {
+
   const { pathname } = req.nextUrl;
 
   // Allow Next internals + static + api
