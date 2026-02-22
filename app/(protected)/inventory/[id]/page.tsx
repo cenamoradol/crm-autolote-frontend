@@ -6,6 +6,23 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getVehicle, updateVehicle, type Vehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import { getReservationByVehicle, type Reservation } from "@/lib/reservations";
 import { useUser } from "@/components/providers/UserProvider";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // --- Icons ---
 function IconArrowLeft({ className }: { className?: string }) {
@@ -427,9 +444,73 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
   );
 }
 
+function SortableMediaItem({ m, handleDelete, reordering }: { m: any, handleDelete: (id: string) => void, reordering: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: m.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative aspect-square bg-gray-900 rounded-lg overflow-hidden border border-gray-200 cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+    >
+      <div {...attributes} {...listeners} className="w-full h-full">
+        {m.kind === 'VIDEO' ? (
+          <div className="relative w-full h-full">
+            <video src={m.url} className="w-full h-full object-cover" muted playsInline />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" className="opacity-70">
+                <path d="m7 4 12 8-12 8V4z" />
+              </svg>
+            </div>
+          </div>
+        ) : (
+          <img src={m.url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        )}
+      </div>
+
+      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all pointer-events-none" />
+
+      <div className="absolute top-1 right-1 flex gap-1 opacity-100 group-hover:opacity-100 transition-opacity">
+        <button
+          className="bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-600 shadow-sm pointer-events-auto backdrop-blur-sm"
+          onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }}
+          title="Eliminar"
+        >
+          <IconTrash className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {m.isCover && (
+        <div className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+          PORTADA
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
   const [media, setMedia] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [reordering, setReordering] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   async function load() {
     try {
@@ -462,34 +543,56 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
     load();
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = media.findIndex((m) => m.id === active.id);
+    const newIndex = media.findIndex((m) => m.id === over.id);
+
+    const newMedia = arrayMove(media, oldIndex, newIndex);
+    setMedia(newMedia);
+    setReordering(true);
+
+    try {
+      const res = await fetch(`/api/bff/vehicles/${vehicleId}/media/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: newMedia.map(m => m.id) })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      alert("Error al reordenar");
+      load();
+    } finally {
+      setReordering(false);
+    }
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-900">Media Manager</h3>
-        <span className="text-xs text-gray-500">Máximo 10 fotos (PNG, JPG)</span>
+        <span className="text-xs text-gray-500">Máximo 10 fotos (PNG, JPG). Arrastra para reordenar.</span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {media.map((m) => (
-          <div key={m.id} className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-            <img src={m.url} className="w-full h-full object-cover" />
-            <button
-              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => handleDelete(m.id)}
-            >
-              <IconTrash className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SortableContext items={media.map(m => m.id)} strategy={rectSortingStrategy}>
+            {media.map((m) => (
+              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} reordering={reordering} />
+            ))}
+          </SortableContext>
 
-        <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors aspect-square">
-          <input type="file" multiple accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-          <div className="bg-gray-100 p-3 rounded-full mb-2">
-            <IconUpload className="w-6 h-6 text-gray-500" />
-          </div>
-          <span className="text-sm font-medium text-gray-600">{uploading ? "..." : "SUBIR FOTO"}</span>
-        </label>
-      </div>
+          <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors aspect-square">
+            <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+            <div className="bg-gray-100 p-3 rounded-full mb-2">
+              <IconUpload className="w-6 h-6 text-gray-500" />
+            </div>
+            <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">{uploading ? "Subiendo..." : "Subir Media"}</span>
+          </label>
+        </div>
+      </DndContext>
     </div>
   );
 }
@@ -724,6 +827,18 @@ export default function VehicleEditPage() {
             {/* Información General */}
             <div className={sectionClass}>
               <h2 className="text-lg font-bold text-gray-900 mb-6">Información General</h2>
+
+              <div className="mb-6">
+                <label className={labelClass}>Nombre / Título del Vehículo</label>
+                <input
+                  className={inputClass}
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  disabled={isArchived || !canEdit}
+                  placeholder="Ej: Toyota Hilux 2022 Doble Cabina..."
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Tipo de Vehículo</label>
