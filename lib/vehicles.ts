@@ -20,6 +20,7 @@ export type VehicleUpsertPayload = {
   color?: string;
   transmission?: string;
   fuelType?: string;
+  engineSize?: number;
 
   isPublished?: boolean;
 };
@@ -59,6 +60,7 @@ export type Vehicle = {
   color?: string | null;
   transmission?: string | null;
   fuelType?: string | null;
+  engineSize?: number | null;
 
   createdAt?: string;
   updatedAt?: string;
@@ -115,6 +117,7 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     color: payload.color ?? undefined,
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
+    engineSize: payload.engineSize ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     // stockNumber: (backend actual no lo usa; NO lo mandamos para no provocar 400)
   };
@@ -141,6 +144,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     color: payload.color ?? undefined,
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
+    engineSize: payload.engineSize ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     // stockNumber: (backend actual no lo usa; NO lo mandamos)
   };

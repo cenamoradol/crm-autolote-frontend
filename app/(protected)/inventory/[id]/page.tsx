@@ -100,6 +100,14 @@ function toStringOrUndefined(v: string | null | undefined): string | undefined {
   return s ? s : undefined;
 }
 
+function toFloatOrUndefined(v: string | number | undefined): number | undefined {
+  if (v === undefined || v === null) return undefined;
+  const s = String(v).trim();
+  if (!s) return undefined;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 // --- Components ---
 
 // Simple Search Select (Tailwind version)
@@ -513,8 +521,10 @@ export default function VehicleEditPage() {
   const [color, setColor] = useState("");
   const [transmission, setTransmission] = useState("");
   const [fuelType, setFuelType] = useState("");
+  const [engineSize, setEngineSize] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
 
   // Catalogs
   const [branches, setBranches] = useState<any[]>([]);
@@ -552,6 +562,7 @@ export default function VehicleEditPage() {
           setColor(v.color || "");
           setTransmission(v.transmission || "");
           setFuelType(v.fuelType || "");
+          setEngineSize(v.engineSize ? String(v.engineSize) : "");
           setVehicleTypeId(v.vehicleTypeId || "");
           setIsPublished(!!v.isPublished);
 
@@ -595,6 +606,7 @@ export default function VehicleEditPage() {
         color: toStringOrUndefined(color),
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
+        engineSize: toFloatOrUndefined(engineSize),
         vehicleTypeId: vehicleTypeId || undefined,
         isPublished
       });
@@ -791,6 +803,25 @@ export default function VehicleEditPage() {
                     <option value="Híbrido">Híbrido</option>
                     <option value="Eléctrico">Eléctrico</option>
                   </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Motor (L)</label>
+                  <input
+                    className={`${inputClass} ${engineSizeError ? "border-red-500 focus:border-red-500 focus:ring-red-200" : ""}`}
+                    value={engineSize}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val && !/^\d*\.?\d*$/.test(val)) {
+                        setEngineSizeError("Solo se permiten números decimales");
+                      } else {
+                        setEngineSizeError(null);
+                      }
+                      setEngineSize(val);
+                    }}
+                    disabled={isArchived}
+                    placeholder="Ej: 2.0"
+                  />
+                  {engineSizeError && <p className="text-red-500 text-xs mt-1">{engineSizeError}</p>}
                 </div>
               </div>
 

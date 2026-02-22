@@ -80,7 +80,7 @@ async function forward(
 
     next.cookies.set(COOKIE_ACCESS, refreshed.accessToken, {
       ...cookieBaseOptions(),
-      maxAge: 60 * 15
+      maxAge: 60 * 60 * 8
     });
 
     return next;

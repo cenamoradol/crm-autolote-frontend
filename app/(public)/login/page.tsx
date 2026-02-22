@@ -103,7 +103,7 @@ export default function LoginPage() {
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
               {mode === "login"
-                ? "Accede al panel de control de tu concesionario"
+                ? "Accede al panel de control"
                 : "Ingresa tu correo para recibir un enlace de recuperación"}
             </p>
           </div>
@@ -237,31 +237,17 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-4">
-                Otras opciones
-              </p>
-              <div className="flex flex-col gap-3">
-                <a className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 group" href="#">
-                  <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">help</span>
-                  Solicitar acceso
-                </a>
-                <a className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 group" href="#">
-                  <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">headset_mic</span>
-                  Soporte Técnico
-                </a>
-              </div>
-            </div>
+
           </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="py-6 text-center text-slate-400 text-xs">
-        <p>© 2024 AutoLote CRM. Todos los derechos reservados.</p>
+        <p>© 2026 AutoLote CRM. Todos los derechos reservados.</p>
         <div className="flex justify-center gap-4 mt-2">
-          <a href="#" className="hover:text-slate-600">Privacidad</a>
-          <a href="#" className="hover:text-slate-600">Términos</a>
+          {/* <a href="#" className="hover:text-slate-600">Privacidad</a>
+          <a href="#" className="hover:text-slate-600">Términos</a> */}
         </div>
       </footer>
     </div>

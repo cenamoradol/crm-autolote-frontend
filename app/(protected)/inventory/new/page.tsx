@@ -62,6 +62,13 @@ function toPriceOrUndefined(v: string): string | undefined {
   return s ? s : undefined;
 }
 
+function toFloatOrUndefined(v: string): number | undefined {
+  const s = (v ?? "").trim();
+  if (!s) return undefined;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 // --- Icons (Inline SVGs) ---
 function IconArrowLeft({ className }: { className?: string }) {
   return (
@@ -257,11 +264,13 @@ export default function VehicleCreatePage() {
   const [color, setColor] = useState("");
   const [transmission, setTransmission] = useState("");
   const [fuelType, setFuelType] = useState("");
+  const [engineSize, setEngineSize] = useState("");
 
   const [isPublished, setIsPublished] = useState(false);
 
   // --- Validation ---
   const [vinError, setVinError] = useState<string | null>(null);
+  const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
 
   const canLoadModels = useMemo(() => !!brandId, [brandId]);
 
@@ -362,6 +371,7 @@ export default function VehicleCreatePage() {
         color: toStringOrUndefined(color),
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
+        engineSize: toFloatOrUndefined(engineSize),
         price: toPriceOrUndefined(price),
         isPublished,
       };
@@ -530,6 +540,27 @@ export default function VehicleCreatePage() {
                     onChange={e => setTitle(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>Motor (L)</label>
+                  <input
+                    type="text"
+                    className={`${inputClass} ${engineSizeError ? "border-red-500 focus:border-red-500 focus:ring-red-200" : ""}`}
+                    placeholder="Ej: 2.0"
+                    value={engineSize}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val && !/^\d*\.?\d*$/.test(val)) {
+                        setEngineSizeError("Solo se permiten números decimales (ej. 2.0)");
+                      } else {
+                        setEngineSizeError(null);
+                      }
+                      setEngineSize(val);
+                    }}
+                  />
+                  {engineSizeError && <p className="text-red-500 text-xs mt-1">{engineSizeError}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className={labelClass}>Precio</label>
                   <div className="relative">

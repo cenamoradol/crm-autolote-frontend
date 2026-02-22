@@ -165,6 +165,7 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             <DetailRow label="Kilometraje" value={vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null} icon="speed" />
                             <DetailRow label="Color" value={vehicle.color} icon="palette" />
                             <DetailRow label="Transmisión" value={vehicle.transmission} icon="settings" />
+                            <DetailRow label="Motor" value={vehicle.engineSize ? `${vehicle.engineSize} L` : null} icon="build" />
                             <DetailRow label="Combustible" value={vehicle.fuelType} icon="local_gas_station" />
                             <DetailRow label="Ubicación" value={vehicle.branch?.name} icon="store" />
                         </div>
@@ -245,7 +246,19 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                                         {money(vehicle.sale.soldPrice)}
                                     </span>
                                 </div>
+                                <div>
+                                    <span className="block text-emerald-600 dark:text-emerald-400/70 font-semibold mb-1">Vendedor</span>
+                                    <span className="text-slate-700 dark:text-slate-200 font-medium">
+                                        {vehicle.sale.soldBy?.fullName || "Sistema"}
+                                    </span>
+                                </div>
                             </div>
+                            {vehicle.sale.notes && (
+                                <div className="col-span-full mt-2 pt-2 border-t border-emerald-200/50">
+                                    <span className="block text-emerald-600 dark:text-emerald-400/70 font-semibold mb-1">Notas</span>
+                                    <p className="text-slate-700 dark:text-slate-300 italic">{vehicle.sale.notes}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 

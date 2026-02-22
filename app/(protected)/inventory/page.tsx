@@ -225,6 +225,7 @@ export default function InventoryPage() {
                 <th className="px-6 py-4">Vehículo</th>
                 <th className="px-6 py-4">Marca / Modelo</th>
                 <th className="px-6 py-4">Año</th>
+                <th className="px-6 py-4">Motor</th>
                 <th className="px-6 py-4">Precio</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Publicado</th>
@@ -248,6 +249,7 @@ export default function InventoryPage() {
                     {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{v.year ?? "-"}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
