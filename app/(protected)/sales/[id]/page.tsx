@@ -7,15 +7,6 @@ import { getSaleFromList, money, type Sale } from "@/lib/sales";
 import { getVehicle, type Vehicle } from "@/lib/vehicles";
 
 // --- Icons ---
-function IconPrinter({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="6 9 6 2 18 2 18 9" />
-      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-      <rect width="12" height="8" x="6" y="14" />
-    </svg>
-  );
-}
 function IconMail({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -64,14 +55,6 @@ function IconUser({ className }: { className?: string }) {
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
-    </svg>
-  )
-}
-function IconClock({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
     </svg>
   )
 }
@@ -132,12 +115,6 @@ export default function SaleDetailPage() {
   const formattedDate = new Date(sale.soldAt).toLocaleDateString();
   const formattedTime = new Date(sale.soldAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Mocked Activities
-  const activities = [
-    { id: 1, type: "call", date: "12 Oct 2023", title: "Llamada", summary: "Confirmación de términos financieros y seguro." },
-    { id: 2, type: "meeting", date: "10 Oct 2023", title: "Reunión", summary: "Prueba de manejo satisfactoria y evaluación de trade-in." },
-    { id: 3, type: "lead", date: "08 Oct 2023", title: "Lead", summary: "Interés registrado a través de Facebook Marketplace." }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -161,23 +138,12 @@ export default function SaleDetailPage() {
                 COMPLETADO
               </span>
             </div>
-
-            <div className="flex gap-3">
-              <button className="hidden md:inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <IconPrinter className="w-4 h-4 mr-2" />
-                Imprimir Recibo
-              </button>
-              <button className="hidden md:inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <IconMail className="w-4 h-4 mr-2" />
-                Enviar por Email
-              </button>
-              <Link
-                href={returnTo}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 hover:text-gray-900"
-              >
-                Volver
-              </Link>
-            </div>
+            <Link
+              href={returnTo}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 hover:text-gray-900"
+            >
+              Volver
+            </Link>
           </div>
         </div>
       </div>
@@ -225,44 +191,6 @@ export default function SaleDetailPage() {
               )}
             </div>
 
-            {/* Activity History (Mock) */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-                <div className="flex items-center gap-2">
-                  <IconClock className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-gray-900">Historial de Actividades</h2>
-                </div>
-                <button className="text-sm text-blue-600 font-semibold hover:text-blue-700">VER TODO</button>
-              </div>
-
-              <div className="space-y-6">
-                {/* Mock List */}
-                <div className="bg-blue-50/50 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500 font-medium text-xs">
-                      <tr>
-                        <th className="px-4 py-3 text-left">ACTIVIDAD</th>
-                        <th className="px-4 py-3 text-left">FECHA</th>
-                        <th className="px-4 py-3 text-left">RESUMEN</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {activities.map((act) => (
-                        <tr key={act.id}>
-                          <td className="px-4 py-3 font-medium flex items-center gap-2">
-                            {act.type === 'call' && <IconPhone className="w-3 h-3 text-blue-500" />}
-                            {act.type === 'meeting' && <IconUser className="w-3 h-3 text-purple-500" />}
-                            {act.title}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">{act.date}</td>
-                          <td className="px-4 py-3 text-gray-600">{act.summary}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
 
           </div>
 
@@ -363,12 +291,30 @@ export default function SaleDetailPage() {
                     )}
                   </div>
                 </div>
+
+                {vehicleFull?.consignor && (
+                  <>
+                    <hr className="border-gray-100" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase mb-3">CONSIGNATARIO (DUEÑO)</p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                          {vehicleFull.consignor.fullName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{vehicleFull.consignor.fullName}</p>
+                          <p className="text-xs text-gray-500">Propietario</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

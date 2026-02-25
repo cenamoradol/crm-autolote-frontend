@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Navbar } from "@/components/ui/Navbar";
+import { SidebarNavigation } from "./SidebarNavigation";
+import { useState } from "react";
 import { SessionUser } from "@/lib/server/getServerSession";
 
 export default function MasterShell({
@@ -11,102 +15,13 @@ export default function MasterShell({
   supportStoreId?: string | null;
   session: SessionUser;
 }) {
-  const isSA = session.isSuperAdmin;
-  const roles = session.roles;
-  const isAdmin = roles.includes("admin");
-  const isSupervisor = roles.includes("supervisor");
-  const isSeller = roles.includes("seller");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Navbar
         title="SuperAdmin"
-        center={
-          <div className="flex gap-1 h-full items-center">
-            {isSA && (
-              <>
-                <Link
-                  href="/sa"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Inicio
-                </Link>
-                <Link
-                  href="/sa/stores"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Stores
-                </Link>
-                <Link
-                  href="/sa/users"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Users
-                </Link>
-                <Link
-                  href="/sa/vehicle-types"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Tipos de Vehículo
-                </Link>
-                <Link
-                  href="/sa/brands"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Marcas y Modelos
-                </Link>
-              </>
-            )}
-
-
-            {supportStoreId && (
-              <>
-                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
-                <Link
-                  href="/inventory"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                >
-                  Inventarios
-                </Link>
-
-                {(isSA || isAdmin) && (
-                  <Link
-                    href="/sales"
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                  >
-                    Ventas
-                  </Link>
-                )}
-
-                {(isSA || isAdmin || isSupervisor) && (
-                  <Link
-                    href="/activities"
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                  >
-                    Actividades
-                  </Link>
-                )}
-
-                {(isSA || isAdmin || isSupervisor) && (
-                  <Link
-                    href="/customers"
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                  >
-                    Clientes
-                  </Link>
-                )}
-
-                {(isSA || isAdmin || isSupervisor) && (
-                  <Link
-                    href="/leads"
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-md transition-colors"
-                  >
-                    Leads
-                  </Link>
-                )}
-              </>
-            )}
-          </div>
-        }
+        onMenuClick={() => setIsSidebarOpen(true)}
         right={
           <div className="flex items-center gap-2">
             <Link
@@ -115,18 +30,18 @@ export default function MasterShell({
             >
               {supportStoreId ? "Cambiar Store" : "Elegir Store"}
             </Link>
-
-            <form action="/api/auth/logout" method="post">
-              <button className="text-slate-500 hover:text-red-600 font-medium text-sm px-3 py-2 rounded-md transition-colors flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">logout</span>
-                <span>Salir</span>
-              </button>
-            </form>
           </div>
         }
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">{children}</div>
+
+      <SidebarNavigation
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        session={session}
+        supportStoreId={supportStoreId}
+      />
     </div>
   );
 }

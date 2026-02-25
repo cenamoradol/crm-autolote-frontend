@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createVehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
+import SearchSelectTW from "@/components/common/SearchSelectTW";
 
 // --- Types ---
 type Branch = {
@@ -267,6 +268,7 @@ export default function VehicleCreatePage() {
   const [engineSize, setEngineSize] = useState("");
 
   const [isPublished, setIsPublished] = useState(false);
+  const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
 
   // --- Validation ---
   const [vinError, setVinError] = useState<string | null>(null);
@@ -374,6 +376,7 @@ export default function VehicleCreatePage() {
         engineSize: toFloatOrUndefined(engineSize),
         price: toPriceOrUndefined(price),
         isPublished,
+        consignorId: consignor?.value || undefined
       };
 
       const created = await createVehicle(payload);
@@ -611,6 +614,27 @@ export default function VehicleCreatePage() {
                     <p className="text-red-500 text-xs mt-1">{vinError}</p>
                   )}
                 </div>
+              </div>
+
+              <div className="border-t border-gray-100 mt-6 pt-6">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Consignación</h3>
+                <SearchSelectTW
+                  label="Consignatario (Dueño del Vehículo)"
+                  placeholder="Buscar consignatario..."
+                  value={consignor}
+                  onChange={setConsignor}
+                  loadOptions={async (q) => {
+                    const res = await fetchJson(`/api/bff/consignors?q=${encodeURIComponent(q)}`);
+                    return (res || []).map((c: any) => ({
+                      value: c.id,
+                      label: c.fullName,
+                      sublabel: c.phone || c.email
+                    }));
+                  }}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Asigna al dueño del vehículo si este es recibido en consignación para su venta.
+                </p>
               </div>
             </div>
 

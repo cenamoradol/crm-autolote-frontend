@@ -90,7 +90,7 @@ export default function SaHome() {
             <h3 className="text-xl font-semibold text-slate-800 dark:text-white">Usuarios Globales</h3>
           </div>
           <p className="mt-4 text-slate-600 dark:text-slate-400">
-            Gestiona usuarios del sistema, asígnales roles (admin, supervisor, vendedor) y asócialos a las tiendas correspondientes.
+            Gestiona usuarios del sistema, asígnales permisos granulares por módulo y asócialos a las tiendas correspondientes.
           </p>
           <div className="mt-6">
             <Link

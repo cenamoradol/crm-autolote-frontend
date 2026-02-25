@@ -32,9 +32,9 @@ import { useUser } from "@/components/providers/UserProvider";
 
 export default function InventoryPage() {
   const user = useUser();
-  const isSeller = user.roles.includes("seller");
-  const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
-  const canEdit = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const permissions = user.permissions || [];
+  const canArchive = user.isSuperAdmin || permissions.includes("inventory:delete");
+  const canEdit = user.isSuperAdmin || permissions.includes("inventory:update");
 
   const pathname = usePathname();
   const sp = useSearchParams();

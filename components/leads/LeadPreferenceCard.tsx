@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getLeadPreference, upsertLeadPreference, type LeadPreference } from "@/lib/leads";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import toast from "react-hot-toast";
 
 type Brand = { id: string; name: string };
 type Model = { id: string; name: string; brandId?: string };
@@ -123,9 +124,10 @@ export default function LeadPreferenceCard({ leadId }: Props) {
 
             const updated = await upsertLeadPreference(leadId, payload);
             setPref(updated);
-            alert("Preferencias guardadas");
+            toast.success("Preferencias guardadas");
         } catch (e: any) {
             setError(e.message || "Error al guardar");
+            toast.error(e.message || "Error al guardar");
         } finally {
             setSaving(false);
         }

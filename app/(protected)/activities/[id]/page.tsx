@@ -8,6 +8,7 @@ import { searchCustomers, searchLeads, searchVehicles } from "@/lib/lookups";
 import { getCustomer } from "@/lib/customers";
 import { getLead } from "@/lib/leads";
 import { getVehicle } from "@/lib/vehicles";
+import toast from "react-hot-toast";
 
 // --- Icons ---
 function IconTrash({ className }: { className?: string }) {
@@ -235,10 +236,10 @@ export default function ActivityEditPage({ params }: { params: Promise<{ id: str
         customerId: customer?.id || null,
         vehicleId: vehicle?.id || null
       });
-      alert("Actividad actualizada");
+      toast.success("Actividad actualizada");
       router.push(returnTo);
     } catch (e: any) {
-      setErr(e.message || "Error al guardar");
+      toast.error(e.message || "Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -248,9 +249,10 @@ export default function ActivityEditPage({ params }: { params: Promise<{ id: str
     if (!confirm("¿Eliminar esta actividad?")) return;
     try {
       await deleteActivity(id);
+      toast.success("Actividad eliminada");
       router.replace(returnTo);
     } catch (e: any) {
-      alert("Error al eliminar");
+      toast.error("Error al eliminar");
     }
   }
 

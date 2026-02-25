@@ -3,6 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { deleteLead, getLead, updateLead, type Lead, type LeadStatus } from "@/lib/leads";
 import { searchCustomers } from "@/lib/lookups";
 import LeadPreferenceCard from "@/components/leads/LeadPreferenceCard";
@@ -255,9 +256,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       });
       // Reload to ensure sync
       await load();
-      alert("Lead actualizado correctamente");
+      toast.success("Lead actualizado correctamente");
     } catch (e: any) {
       setErr(e.message || "Error al guardar");
+      toast.error(e.message || "Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -267,9 +269,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     if (!confirm("¿Estás seguro de eliminar este lead? Esta acción no se puede deshacer.")) return;
     try {
       await deleteLead(id);
+      toast.success("Lead eliminado");
       router.replace(returnTo);
     } catch (e: any) {
-      alert("Error al eliminar: " + e.message);
+      toast.error("Error al eliminar: " + e.message);
     }
   }
 

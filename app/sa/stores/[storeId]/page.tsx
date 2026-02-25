@@ -18,7 +18,8 @@ type StoreDetail = {
     userId: string;
     email: string;
     fullName: string | null;
-    roles: { key: string; name: string }[];
+    permissions: Record<string, string[]>;
+    permissionSetName?: string | null;
   }[];
 };
 
@@ -492,8 +493,8 @@ export default function StoreDetailPage({
             <thead className="bg-slate-50 dark:bg-slate-900/50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Roles</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Conjunto</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Permisos Manuales (Override)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700 dark:bg-slate-800">
@@ -505,13 +506,21 @@ export default function StoreDetailPage({
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium uppercase tracking-tight">
                     {m.fullName ?? "-"}
                   </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight">
+                    {m.permissionSetName ?? (
+                      <span className="text-slate-400 font-normal italic">Directo</span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium uppercase tracking-tight">
                     <div className="flex flex-wrap gap-1">
-                      {(m.roles ?? []).map((r) => (
-                        <span key={r.key} className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                          {r.key}
+                      {Object.keys(m.permissions || {}).map((mod) => (
+                        <span key={mod} className="inline-flex items-center rounded bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-700">
+                          {mod}
                         </span>
                       ))}
+                      {Object.keys(m.permissions || {}).length === 0 && (
+                        <span className="text-xs text-slate-400 italic">No overrides</span>
+                      )}
                     </div>
                   </td>
                 </tr>

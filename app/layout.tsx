@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Toaster } from 'react-hot-toast';
 
 
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display">
         {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );

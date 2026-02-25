@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import { getVehicle, updateVehicle, type Vehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import { getReservationByVehicle, type Reservation } from "@/lib/reservations";
+import SearchSelectTW from "@/components/common/SearchSelectTW";
 import { useUser } from "@/components/providers/UserProvider";
 import {
   DndContext,
@@ -128,93 +130,6 @@ function toFloatOrUndefined(v: string | number | undefined): number | undefined 
 // --- Components ---
 
 // Simple Search Select (Tailwind version)
-function SearchSelectTW({
-  label,
-  value,
-  onChange,
-  loadOptions,
-  placeholder = "Buscar..."
-}: {
-  label?: string;
-  value: { value: string; label: string; sublabel?: string } | null;
-  onChange: (v: any) => void;
-  loadOptions: (q: string) => Promise<any[]>;
-  placeholder?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState(value?.label ?? "");
-  const [options, setOptions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setInput(value?.label ?? ""); }, [value]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
-
-  useEffect(() => {
-    if (!open) return;
-    const timeout = setTimeout(async () => {
-      if (input.trim().length < 2) { setOptions([]); return; }
-      setLoading(true);
-      try {
-        const res = await loadOptions(input);
-        setOptions(res);
-      } catch {
-        setOptions([]); // silent error
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [input, open, loadOptions]);
-
-  return (
-    <div className="relative" ref={wrapperRef}>
-      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
-      <div className="relative">
-        <input
-          className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-3 border"
-          value={input}
-          onChange={e => { setInput(e.target.value); setOpen(true); onChange(null); }}
-          onFocus={() => setOpen(true)}
-          placeholder={placeholder}
-        />
-        {value && (
-          <button
-            onClick={() => { onChange(null); setInput(""); setOptions([]); }}
-            className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-      {open && input.length >= 2 && (
-        <div className="absolute z-10 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
-          {loading && <div className="px-4 py-2 text-sm text-gray-500">Buscando...</div>}
-          {!loading && options.length === 0 && <div className="px-4 py-2 text-sm text-gray-500">Sin resultados</div>}
-          {!loading && options.map((opt) => (
-            <div
-              key={opt.value}
-              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-              onClick={() => { onChange(opt); setInput(opt.label); setOpen(false); }}
-            >
-              <span className="block truncate font-medium">{opt.label}</span>
-              {opt.sublabel && <span className="block truncate text-xs text-gray-500">{opt.sublabel}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // Sidebars
 function ReservationCard({ vehicleId, status }: { vehicleId: string; status: string }) {
@@ -253,7 +168,7 @@ function ReservationCard({ vehicleId, status }: { vehicleId: string; status: str
       {!reservation && (
         <button
           className="w-full bg-blue-50 text-blue-600 font-medium py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
-          onClick={() => alert("Funcionalidad de crear reserva pendiente de modal.")}
+          onClick={() => toast.success("Funcionalidad de crear reserva pendiente de modal.")}
         >
           Crear Reservación
         </button>
@@ -287,10 +202,11 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
   const [notes, setNotes] = useState("");
 
   const isSold = !!sale;
-  const canManageSales = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const permissions = user.permissions || [];
+  const canManageSales = user.isSuperAdmin || permissions.includes("sales:create");
 
   async function handleSale() {
-    if (!soldPrice) return alert("Precio es requerido");
+    if (!soldPrice) return toast.error("Precio es requerido");
     setLoading(true);
     try {
       const res = await fetch("/api/bff/sales", {
@@ -305,10 +221,11 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
         })
       });
       if (!res.ok) throw new Error("Error al vender");
+      toast.success("Venta registrada");
       onSaleRecorded();
       setMode("view");
     } catch (e) {
-      alert("No se pudo registrar la venta");
+      toast.error("No se pudo registrar la venta");
     } finally {
       setLoading(false);
     }
@@ -529,9 +446,10 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
     fd.append("isCoverFirst", "false");
     try {
       await fetch(`/api/bff/vehicles/${vehicleId}/media/upload-many`, { method: "POST", body: fd });
+      toast.success("Fotos subidas exitosamente");
       await load();
     } catch {
-      alert("Error subiendo fotos");
+      toast.error("Error subiendo fotos");
     } finally {
       setUploading(false);
     }
@@ -561,8 +479,9 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
         body: JSON.stringify({ orderedIds: newMedia.map(m => m.id) })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success("Orden guardado");
     } catch (err) {
-      alert("Error al reordenar");
+      toast.error("Error al reordenar");
       load();
     } finally {
       setReordering(false);
@@ -627,6 +546,7 @@ export default function VehicleEditPage() {
   const [engineSize, setEngineSize] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
   const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
 
   // Catalogs
@@ -668,6 +588,13 @@ export default function VehicleEditPage() {
           setEngineSize(v.engineSize ? String(v.engineSize) : "");
           setVehicleTypeId(v.vehicleTypeId || "");
           setIsPublished(!!v.isPublished);
+          if (v.consignor) {
+            setConsignor({
+              value: v.consignor.id,
+              label: v.consignor.fullName,
+              sublabel: v.consignor.phone || v.consignor.email || undefined
+            });
+          }
 
           // prefetch models
           if (v.brand?.id) {
@@ -711,12 +638,13 @@ export default function VehicleEditPage() {
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
         vehicleTypeId: vehicleTypeId || undefined,
-        isPublished
+        isPublished,
+        consignorId: consignor?.value || undefined
       });
-      alert("Guardado!");
+      toast.success("Vehículo guardado correctamente!");
       // Refresh logic if needed or stay
     } catch {
-      alert("Error al guardar");
+      toast.error("Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -726,15 +654,17 @@ export default function VehicleEditPage() {
     if (!confirm("Archivar vehículo?")) return;
     try {
       await updateVehicle(id, { status: "ARCHIVED" } as any);
+      toast.success("Vehículo archivado");
       window.location.reload();
     } catch {
-      alert("Error archivando");
+      toast.error("Error archivando vehículo");
     }
   }
 
   const user = useUser();
-  const canArchive = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
-  const canEdit = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const permissions = user.permissions || [];
+  const canArchive = user.isSuperAdmin || permissions.includes("inventory:delete");
+  const canEdit = user.isSuperAdmin || permissions.includes("inventory:update");
 
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando vehículo...</div>;
   if (!vehicle) return <div className="p-8 text-center">Vehículo no encontrado. <Link href="/inventory" className="text-blue-600">Volver</Link></div>;
@@ -949,6 +879,27 @@ export default function VehicleEditPage() {
                 <label className={labelClass}>Descripción</label>
                 <textarea className={inputClass} rows={4} value={description} onChange={e => setDescription(e.target.value)} disabled={isArchived || !canEdit} />
               </div>
+
+              <div className="border-t border-gray-100 pt-6">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Consignación</h3>
+                <SearchSelectTW
+                  label="Consignatario (Dueño del Vehículo)"
+                  value={consignor}
+                  onChange={setConsignor}
+                  placeholder="Buscar cliente por nombre, email o teléfono..."
+                  loadOptions={async (q) => {
+                    const res = await fetchJson(`/api/bff/consignors?q=${encodeURIComponent(q)}`);
+                    return (res || []).map((c: any) => ({
+                      value: c.id,
+                      label: c.fullName,
+                      sublabel: c.phone || c.email
+                    }));
+                  }}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Asigna al cliente dueño del vehículo si este es recibido en consignación para su venta.
+                </p>
+              </div>
             </div>
 
             {/* Media Manager */}
@@ -973,7 +924,9 @@ export default function VehicleEditPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Creado por</span>
-                  <span className="font-medium text-gray-900">Admin Central</span>
+                  <span className="font-medium text-gray-900">
+                    {vehicle.createdBy?.fullName || vehicle.createdBy?.email || "Sistema"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Fecha creación</span>
@@ -996,6 +949,21 @@ export default function VehicleEditPage() {
                   <span className="font-medium text-gray-900">{vehicle.updatedAt ? new Date(vehicle.updatedAt).toLocaleTimeString() : "-"}</span>
                 </div>
               </div>
+
+              {vehicle.consignor && (
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">CONSIGNATARIO (DUEÑO)</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                      {vehicle.consignor.fullName.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{vehicle.consignor.fullName}</p>
+                      <p className="text-xs text-gray-500 truncate">{vehicle.consignor.phone || vehicle.consignor.email || "Sin contacto"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

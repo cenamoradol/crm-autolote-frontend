@@ -7,7 +7,7 @@ export type SessionUser = {
     email: string;
     fullName: string | null;
     isSuperAdmin: boolean;
-    roles: string[];
+    permissions: string[];
 };
 
 export async function getServerSession(): Promise<SessionUser | null> {

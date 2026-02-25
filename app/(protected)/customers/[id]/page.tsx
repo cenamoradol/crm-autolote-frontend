@@ -47,7 +47,7 @@ function IconUser({ className }: { className?: string }) {
 
 export default function CustomerEditPage({ params }: { params: Promise<{ id: string }> }) {
   const user = useUser();
-  const canDelete = user.isSuperAdmin || user.roles.includes("admin") || user.roles.includes("supervisor");
+  const canDelete = user.isSuperAdmin || (user.permissions || []).includes("customers:delete");
 
   const resolvedParams = use(params);
   const id = resolvedParams.id;

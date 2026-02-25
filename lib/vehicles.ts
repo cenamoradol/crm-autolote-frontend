@@ -23,6 +23,7 @@ export type VehicleUpsertPayload = {
   engineSize?: number;
 
   isPublished?: boolean;
+  consignorId?: string;
 };
 
 export type Brand = { id: string; name: string };
@@ -70,10 +71,13 @@ export type Vehicle = {
   vehicleType?: { id: string; name: string };
   branch?: Branch;
   media?: VehicleMedia[];
+  consignor?: { id: string; fullName: string; phone?: string; email?: string } | null;
 
   reservation?: any;
+  createdBy?: { id: string; fullName: string | null; email: string } | null;
   sale?: { soldPrice?: string | number | null;[key: string]: any } | null;
   soldPrice?: string | number | null;
+  consignorId?: string | null;
 };
 
 function buildQuery(params: Record<string, any>) {
@@ -119,7 +123,7 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
-    // stockNumber: (backend actual no lo usa; NO lo mandamos para no provocar 400)
+    consignorId: payload.consignorId ?? undefined,
   };
 
   return apiFetch<Vehicle>(`/vehicles`, {
@@ -146,7 +150,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
-    // stockNumber: (backend actual no lo usa; NO lo mandamos)
+    consignorId: payload.consignorId ?? undefined,
   };
 
   return apiFetch<Vehicle>(`/vehicles/${encodeURIComponent(id)}`, {
