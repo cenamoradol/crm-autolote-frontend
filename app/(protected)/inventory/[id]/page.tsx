@@ -361,7 +361,7 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
   );
 }
 
-function SortableMediaItem({ m, handleDelete, reordering }: { m: any, handleDelete: (id: string) => void, reordering: boolean }) {
+function SortableMediaItem({ m, handleDelete, reordering, disabled }: { m: any, handleDelete: (id: string) => void, reordering: boolean, disabled?: boolean }) {
   const {
     attributes,
     listeners,
@@ -369,7 +369,7 @@ function SortableMediaItem({ m, handleDelete, reordering }: { m: any, handleDele
     transform,
     transition,
     isDragging
-  } = useSortable({ id: m.id });
+  } = useSortable({ id: m.id, disabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -401,13 +401,15 @@ function SortableMediaItem({ m, handleDelete, reordering }: { m: any, handleDele
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all pointer-events-none" />
 
       <div className="absolute top-1 right-1 flex gap-1 opacity-100 group-hover:opacity-100 transition-opacity">
-        <button
-          className="bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-600 shadow-sm pointer-events-auto backdrop-blur-sm"
-          onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }}
-          title="Eliminar"
-        >
-          <IconTrash className="w-3.5 h-3.5" />
-        </button>
+        {!disabled && (
+          <button
+            className="bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-600 shadow-sm pointer-events-auto backdrop-blur-sm"
+            onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }}
+            title="Eliminar"
+          >
+            <IconTrash className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {m.isCover && (
@@ -419,7 +421,7 @@ function SortableMediaItem({ m, handleDelete, reordering }: { m: any, handleDele
   );
 }
 
-function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
+function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?: boolean }) {
   const [media, setMedia] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [reordering, setReordering] = useState(false);
@@ -440,7 +442,7 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.length) return;
-    setUploading(true);
+    if (disabled) return;
     const fd = new FormData();
     Array.from(e.target.files).forEach(f => fd.append("files", f));
     fd.append("isCoverFirst", "false");
@@ -456,12 +458,14 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
   }
 
   async function handleDelete(id: string) {
+    if (disabled) return;
     if (!confirm("Eliminar imagen?")) return;
     await fetch(`/api/bff/vehicles/${vehicleId}/media/${id}?deleteFile=true`, { method: "DELETE" });
     load();
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (disabled) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -499,12 +503,12 @@ function MediaManagerTW({ vehicleId }: { vehicleId: string }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SortableContext items={media.map(m => m.id)} strategy={rectSortingStrategy}>
             {media.map((m) => (
-              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} reordering={reordering} />
+              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} reordering={reordering} disabled={disabled} />
             ))}
           </SortableContext>
 
-          <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors aspect-square">
-            <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+          <label className={`border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 transition-colors aspect-square ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer hover:border-blue-500 hover:bg-blue-50"}`}>
+            <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading || disabled} />
             <div className="bg-gray-100 p-3 rounded-full mb-2">
               <IconUpload className="w-6 h-6 text-gray-500" />
             </div>
@@ -546,6 +550,9 @@ export default function VehicleEditPage() {
   const [engineSize, setEngineSize] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [isOffer, setIsOffer] = useState(false);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [plate, setPlate] = useState("");
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
   const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
 
@@ -587,6 +594,9 @@ export default function VehicleEditPage() {
           setFuelType(v.fuelType || "");
           setEngineSize(v.engineSize ? String(v.engineSize) : "");
           setVehicleTypeId(v.vehicleTypeId || "");
+          setPlate(v.plate || "");
+          setOfferPrice(v.offerPrice ? String(v.offerPrice) : "");
+          setIsOffer(!!v.offerPrice);
           setIsPublished(!!v.isPublished);
           if (v.consignor) {
             setConsignor({
@@ -637,6 +647,8 @@ export default function VehicleEditPage() {
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
+        offerPrice: isOffer ? toStringOrUndefined(offerPrice) : (offerPrice === "" ? null : undefined),
+        plate: toStringOrUndefined(plate),
         vehicleTypeId: vehicleTypeId || undefined,
         isPublished,
         consignorId: consignor?.value || undefined
@@ -663,8 +675,12 @@ export default function VehicleEditPage() {
 
   const user = useUser();
   const permissions = user.permissions || [];
-  const canArchive = user.isSuperAdmin || permissions.includes("inventory:delete");
-  const canEdit = user.isSuperAdmin || permissions.includes("inventory:update");
+  const isSold = vehicle?.status === "SOLD";
+
+  const canOverride = user.isSuperAdmin || permissions.includes("sales:override_closed");
+
+  const canArchive = (user.isSuperAdmin || permissions.includes("inventory:delete")) && (!isSold || canOverride);
+  const canEdit = (user.isSuperAdmin || permissions.includes("inventory:update")) && (!isSold || canOverride);
 
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando vehículo...</div>;
   if (!vehicle) return <div className="p-8 text-center">Vehículo no encontrado. <Link href="/inventory" className="text-blue-600">Volver</Link></div>;
@@ -694,6 +710,16 @@ export default function VehicleEditPage() {
               <div>
                 <strong>Este vehículo está archivado</strong>
                 <p>Los cambios no se guardarán hasta que el vehículo sea restaurado.</p>
+              </div>
+            </div>
+          )}
+
+          {isSold && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 mb-4 flex items-center gap-3 text-emerald-800 text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              <div>
+                <strong>Este vehículo está liquidado (vendido)</strong>
+                <p>Las ediciones están bloqueadas por seguridad para proteger el historial de la venta.</p>
               </div>
             </div>
           )}
@@ -793,7 +819,7 @@ export default function VehicleEditPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
                   <label className={labelClass}>Año</label>
                   <select className={selectClass} value={year} onChange={e => setYear(e.target.value)} disabled={isArchived || !canEdit}>
@@ -808,12 +834,38 @@ export default function VehicleEditPage() {
                   <label className={labelClass}>VIN / Chasis</label>
                   <input className={inputClass} value={vin} onChange={e => setVin(e.target.value)} disabled={isArchived || !canEdit} />
                 </div>
+                <div>
+                  <label className={labelClass}>Número de Placa</label>
+                  <input className={inputClass} value={plate} onChange={e => setPlate(e.target.value.toUpperCase())} disabled={isArchived || !canEdit} placeholder="P AB 1234" />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
-                  <label className={labelClass}>Precio (USD)</label>
+                  <label className={labelClass}>Precio ({user?.currency || "USD"})</label>
                   <input className={inputClass} value={price} onChange={e => setPrice(e.target.value)} disabled={isArchived || !canEdit} />
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    <div className="flex items-center gap-2">
+                      <span>En Oferta</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsOffer(!isOffer)}
+                        disabled={isArchived || !canEdit}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'} ${(isArchived || !canEdit) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  </label>
+                  <input
+                    className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
+                    disabled={!isOffer || isArchived || !canEdit}
+                    value={offerPrice}
+                    onChange={e => setOfferPrice(e.target.value)}
+                    placeholder="Precio oferta"
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Kilometraje</label>
@@ -903,7 +955,7 @@ export default function VehicleEditPage() {
             </div>
 
             {/* Media Manager */}
-            <MediaManagerTW vehicleId={id} />
+            <MediaManagerTW vehicleId={id} disabled={isArchived || (isSold && !canOverride)} />
           </div>
 
           {/* RIGHT COLUMN (1/3) */}

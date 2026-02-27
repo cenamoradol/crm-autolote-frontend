@@ -383,6 +383,26 @@ function ConsignorDetailDrawer({ id, onClose }: { id: string, onClose: () => voi
                                             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{consignor.phone || 'No registrado'}</span>
                                         </div>
                                     </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-amber-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" /></svg>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-slate-400">DNI</span>
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{consignor.dni || 'No registrado'}</span>
+                                        </div>
+                                    </div>
+                                    {consignor.rtn && (
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-purple-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-slate-400">RTN</span>
+                                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{consignor.rtn}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 

@@ -80,6 +80,7 @@ export function SidebarNavigation({ isOpen, onClose, session, supportStoreId }: 
         { href: "/sa", label: "Inicio", icon: "home" },
         { href: "/sa/stores", label: "Stores", icon: "store" },
         { href: "/sa/users", label: "Users", icon: "group" },
+        { href: "/sa/plans", label: "Planes de Suscripción", icon: "card_membership" },
         { href: "/sa/vehicle-types", label: "Tipos de Vehículo", icon: "directions_car" },
         { href: "/sa/brands", label: "Marcas y Modelos", icon: "branding_watermark" },
     ];

@@ -111,8 +111,17 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             )}
                         </div>
 
-                        <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                            {money(vehicle.price)}
+                        <div className="flex flex-col items-end">
+                            {vehicle.offerPrice ? (
+                                <>
+                                    <span className="text-sm text-slate-400 line-through truncate">{money(vehicle.price)}</span>
+                                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{money(vehicle.offerPrice)}</span>
+                                </>
+                            ) : (
+                                <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {money(vehicle.price)}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -158,6 +167,7 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <DetailRow label="ID Público" value={vehicle.publicId} icon="fingerprint" isMono />
                             <DetailRow label="VIN / Serie" value={vehicle.vin} icon="tag" isMono />
+                            <DetailRow label="Placa" value={vehicle.plate} icon="pin" isMono />
                             <DetailRow label="Marca" value={vehicle.brand?.name} icon="branding_watermark" />
                             <DetailRow label="Modelo" value={vehicle.model?.name} icon="category" />
                             <DetailRow label="Tipo" value={vehicle.vehicleType?.name} icon="directions_car" />

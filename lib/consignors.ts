@@ -5,6 +5,8 @@ export type Consignor = {
     fullName: string;
     phone?: string | null;
     email?: string | null;
+    dni?: string | null;
+    rtn?: string | null;
     notes?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
@@ -15,6 +17,8 @@ export type ConsignorCreateInput = {
     fullName: string;
     phone?: string | null;
     email?: string | null;
+    dni?: string | null;
+    rtn?: string | null;
     notes?: string | null;
 };
 

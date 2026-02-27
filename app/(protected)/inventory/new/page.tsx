@@ -268,6 +268,9 @@ export default function VehicleCreatePage() {
   const [engineSize, setEngineSize] = useState("");
 
   const [isPublished, setIsPublished] = useState(false);
+  const [isOffer, setIsOffer] = useState(false);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [plate, setPlate] = useState("");
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
 
   // --- Validation ---
@@ -375,6 +378,8 @@ export default function VehicleCreatePage() {
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
         price: toPriceOrUndefined(price),
+        offerPrice: isOffer ? toPriceOrUndefined(offerPrice) : undefined,
+        plate: toStringOrUndefined(plate),
         isPublished,
         consignorId: consignor?.value || undefined
       };
@@ -577,9 +582,35 @@ export default function VehicleCreatePage() {
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className={labelClass}>
+                    <div className="flex items-center gap-2">
+                      <span>En Oferta</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsOffer(!isOffer)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'}`}
+                      >
+                        <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      disabled={!isOffer}
+                      className={`${inputClass} pl-7 disabled:bg-gray-50 disabled:text-gray-400`}
+                      placeholder="Precio oferta"
+                      value={offerPrice}
+                      onChange={e => setOfferPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                   <label className={labelClass}>Año</label>
                   <input
@@ -613,6 +644,16 @@ export default function VehicleCreatePage() {
                   {vinError && (
                     <p className="text-red-500 text-xs mt-1">{vinError}</p>
                   )}
+                </div>
+                <div>
+                  <label className={labelClass}>Número de Placa</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    placeholder="P AB 1234"
+                    value={plate}
+                    onChange={e => setPlate(e.target.value.toUpperCase())}
+                  />
                 </div>
               </div>
 
@@ -649,8 +690,8 @@ export default function VehicleCreatePage() {
                 <div>
                   <label className={labelClass}>Color Exterior</label>
                   {/* Using a simple select for now as per design mockup showing dropdowns likely, or inputs */}
-                  {/* Mockup shows "Blanco" in a dropdown-like box, I will use Select for premium feel if I had options, but I'll use input behaving like others or a select with presets + custom? 
-                             The `VehicleForm` used string input. I'll stick to input for data entry flexibility unless I hardcode common colors. 
+                  {/* Mockup shows "Blanco" in a dropdown-like box, I will use Select for premium feel if I had options, but I'll use input behaving like others or a select with presets + custom?
+                             The `VehicleForm` used string input. I'll stick to input for data entry flexibility unless I hardcode common colors.
                              Wait, the mockup specifically shows a dropdown arrow. I should probably make it a select with common options + 'Other'.
                              Actually, let's keep it as an input styled nicely, or a select effectively.
                              For the sake of "Functiona con lo que tenemos", VehicleForm was input.

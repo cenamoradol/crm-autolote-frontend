@@ -68,6 +68,14 @@ function IconEdit({ className }: { className?: string }) {
   )
 }
 
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  ACTIVE: { label: "Activo", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  CONTACTED: { label: "Contactado", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  NO_RESPONSE: { label: "Sin Respuesta", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  NOT_INTERESTED: { label: "No Interesado", color: "bg-red-50 text-red-700 border-red-200" },
+  PURCHASED: { label: "Compró", color: "bg-purple-50 text-purple-700 border-purple-200" },
+};
+
 export default function CustomersPage() {
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -177,8 +185,8 @@ export default function CustomersPage() {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 font-semibold">
                 <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Información de Contacto</th>
-                <th className="px-6 py-4">Documento</th>
+                <th className="px-6 py-4">Contacto</th>
+                <th className="px-6 py-4">Estado</th>
                 <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
@@ -213,17 +221,33 @@ export default function CustomersPage() {
                       {!c.email && !c.phone && <span className="text-slate-400 italic">Sin contacto</span>}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-mono">
-                    {c.documentId || <span className="text-slate-400 italic">-</span>}
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const s = STATUS_MAP[(c as any).status || "ACTIVE"] || STATUS_MAP.ACTIVE;
+                      return (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider ${s.color}`}>
+                          {s.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Link
-                      href={`/customers/${c.id}`}
-                      className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Ver Detalles"
-                    >
-                      <IconEdit className="w-5 h-5" />
-                    </Link>
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={`/customers/${c.id}/detail`}
+                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Ver Ficha"
+                      >
+                        <IconUser className="w-5 h-5" />
+                      </Link>
+                      <Link
+                        href={`/customers/${c.id}`}
+                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <IconEdit className="w-5 h-5" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

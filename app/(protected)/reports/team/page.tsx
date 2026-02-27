@@ -41,25 +41,28 @@ export default function TeamReportsPage() {
     const [error, setError] = useState<string | null>(null);
 
     // Filters
-    const [period, setPeriod] = useState("all-time");
+    const [period, setPeriod] = useState("this-month");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+
+    // Initialize dates for "this-month"
+    useEffect(() => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        setStartDate(start.toISOString().split('T')[0]);
+        setEndDate(now.toISOString().split('T')[0]);
+    }, []);
 
     async function load() {
         if (!canSeeReports) return;
         setLoading(true);
         setError(null);
         try {
-            let query = "";
-            if (period === "this-month") {
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1);
-                query = `?startDate=${start.toISOString()}`;
-            } else if (period === "last-7-days") {
-                const start = new Date();
-                start.setDate(start.getDate() - 7);
-                query = `?startDate=${start.toISOString()}`;
-            }
+            const query = new URLSearchParams();
+            if (startDate) query.set("startDate", startDate);
+            if (endDate) query.set("endDate", endDate);
 
-            const data = await fetchJson(`/api/bff/dashboard/team-kpis${query}`);
+            const data = await fetchJson(`/api/bff/dashboard/team-kpis?${query.toString()}`);
             setStats(Array.isArray(data) ? data : data.data || []);
         } catch (e: any) {
             setError(e.message || "Error al cargar reportes");
@@ -71,7 +74,25 @@ export default function TeamReportsPage() {
     useEffect(() => {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [period, canSeeReports]);
+    }, [canSeeReports]);
+
+    function handlePeriodChange(p: string) {
+        setPeriod(p);
+        const now = new Date();
+        if (p === "all-time") {
+            setStartDate("");
+            setEndDate("");
+        } else if (p === "this-month") {
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(now.toISOString().split('T')[0]);
+        } else if (p === "last-7-days") {
+            const start = new Date();
+            start.setDate(start.getDate() - 7);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(now.toISOString().split('T')[0]);
+        }
+    }
 
     if (!canSeeReports) {
         return <div className="p-8 text-center text-red-500 font-bold">No tienes permiso para ver esta sección.</div>;
@@ -94,23 +115,47 @@ export default function TeamReportsPage() {
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 mt-1">Indicadores clave de rendimiento por cada miembro del equipo.</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <select
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm rounded-lg px-3 py-2 text-slate-700 dark:text-slate-200 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="all-time">Todo el historial</option>
-                            <option value="this-month">Este Mes</option>
-                            <option value="last-7-days">Últimos 7 días</option>
-                        </select>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Periodo</label>
+                            <select
+                                value={period}
+                                onChange={(e) => handlePeriodChange(e.target.value)}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm rounded-lg px-3 py-2 text-slate-700 dark:text-slate-200 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="all-time">Personalizado / Todo</option>
+                                <option value="this-month">Este Mes</option>
+                                <option value="last-7-days">Últimos 7 días</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Desde</label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => { setStartDate(e.target.value); setPeriod("all-time"); }}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm rounded-lg px-3 py-2 text-slate-700 dark:text-slate-200 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Hasta</label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => { setEndDate(e.target.value); setPeriod("all-time"); }}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm rounded-lg px-3 py-2 text-slate-700 dark:text-slate-200 shadow-sm outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
                         <button
                             onClick={load}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50"
                         >
                             <IconRefresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Actualizar
+                            Filtrar
                         </button>
                     </div>
                 </div>

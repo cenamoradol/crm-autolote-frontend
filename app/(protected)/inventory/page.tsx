@@ -7,12 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { deleteVehicle, listVehicles, type Vehicle, type VehicleStatus } from "@/lib/vehicles";
 
-function money(v: any) {
-  if (v === null || v === undefined || v === "") return "-";
-  const n = Number(v);
-  if (Number.isNaN(n)) return String(v);
-  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
+import { formatPrice } from "@/lib/currency";
 
 function parsePublished(v: string): boolean | undefined {
   if (v === "true") return true;
@@ -46,6 +41,8 @@ export default function InventoryPage() {
   const [status, setStatus] = useState<string>(sp.get("status") ?? "");
   const [published, setPublished] = useState<string>(sp.get("published") ?? "");
   const [search, setSearch] = useState<string>(sp.get("search") ?? "");
+
+  const money = (v: any) => formatPrice(v, user.currencySymbol, user.currency);
 
   // Modal state
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
@@ -245,8 +242,18 @@ export default function InventoryPage() {
                 >
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
-                      <span className="text-xs text-slate-400 font-mono mt-0.5">{v.publicId || "ID-?"}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
+                        {v.offerPrice && (
+                          <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">Oferta</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-slate-400 font-mono">{v.publicId || "ID-?"}</span>
+                        {v.plate && (
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold">{v.plate}</span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
@@ -256,7 +263,14 @@ export default function InventoryPage() {
                   <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
+                      {v.offerPrice ? (
+                        <>
+                          <span className="text-sm text-slate-400 line-through truncate">{money(v.price)}</span>
+                          <span className="text-sm text-orange-600 dark:text-orange-400 font-bold">{money(v.offerPrice)}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
+                      )}
                       {v.status === 'SOLD' && (v.soldPrice || v.sale?.soldPrice) ? (
                         <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">
                           Vendido: {money(v.soldPrice || v.sale?.soldPrice)}

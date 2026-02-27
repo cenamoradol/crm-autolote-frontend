@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { useUser } from "@/components/providers/UserProvider";
 
 // --- Icons ---
 function IconCar({ className }: { className?: string }) {
@@ -139,13 +140,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
-  }, []); // Initial load
-
-  useEffect(() => {
-    // Reload when dates change
-    if (dateStart || dateEnd) {
-      loadData();
-    }
   }, [dateStart, dateEnd]);
 
   async function loadData() {
@@ -176,9 +170,19 @@ export default function DashboardPage() {
     }
   }
 
+  const user = useUser();
+
   function formatCurrency(amount: number) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
   }
+
+  const displayCurrency = (val: number) => {
+    const sym = user.currencySymbol || '$';
+    return `${sym}${formatCurrency(val)}`;
+  };
 
   if (error) {
     return (
@@ -229,6 +233,14 @@ export default function DashboardPage() {
               onChange={e => setDateEnd(e.target.value)}
             />
           </div>
+          {(dateStart || dateEnd) && (
+            <button
+              onClick={() => { setDateStart(""); setDateEnd(""); }}
+              className="text-xs font-medium text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-colors"
+            >
+              Limpiar
+            </button>
+          )}
         </div>
       </div>
 
@@ -264,10 +276,10 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Ventas Totales"
-          value={loading ? "..." : formatCurrency(kpis?.totalSales ?? 0)}
+          value={displayCurrency(kpis?.totalSales || 0)}
           icon={IconDollarSign}
-          colorClass="bg-emerald-600"
-          subtext="Ingresos brutos"
+          colorClass="bg-blue-500"
+          subtext="Monto total de vehículos vendidos"
         />
       </div>
 

@@ -39,6 +39,8 @@ export default function EditConsignorPage() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [dni, setDni] = useState("");
+    const [rtn, setRtn] = useState("");
     const [notes, setNotes] = useState("");
 
     useEffect(() => {
@@ -49,6 +51,8 @@ export default function EditConsignorPage() {
                 setFullName(res.fullName);
                 setEmail(res.email || "");
                 setPhone(res.phone || "");
+                setDni(res.dni || "");
+                setRtn(res.rtn || "");
                 setNotes(res.notes || "");
             } catch (e: any) {
                 setError(e.message || "Error al cargar consignatario");
@@ -69,6 +73,8 @@ export default function EditConsignorPage() {
                 fullName,
                 email: email || null,
                 phone: phone || null,
+                dni: dni || null,
+                rtn: rtn || null,
                 notes: notes || null
             };
             await updateConsignor(id, payload);
@@ -148,6 +154,32 @@ export default function EditConsignorPage() {
                                 placeholder="+505 8888 8888"
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                                Número de DNI
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="0801-1990-12345"
+                                value={dni}
+                                onChange={e => setDni(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                                Número de RTN <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="0801-1990-12345-1"
+                                value={rtn}
+                                onChange={e => setRtn(e.target.value)}
                             />
                         </div>
 

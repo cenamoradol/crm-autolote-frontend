@@ -1,4 +1,12 @@
 // lib/sales.ts
+export type SaleDocument = {
+  id: string;
+  name: string;
+  url: string;
+  fileKey: string;
+  createdAt: string;
+};
+
 export type Sale = {
   id: string;
   storeId: string;
@@ -9,6 +17,7 @@ export type Sale = {
   soldAt: string; // ISO
   soldPrice: string | null; // string numeric
   notes: string | null;
+  status: 'COMPLETED' | 'CANCELLED';
 
   vehicle?: {
     id: string;
@@ -26,6 +35,7 @@ export type Sale = {
   customer?: { id: string; fullName: string; phone?: string | null; email?: string | null } | null;
   lead?: { id: string; fullName?: string | null; phone?: string | null; email?: string | null; status?: string | null } | null;
   soldBy?: { id: string; email?: string | null; fullName?: string | null } | null;
+  documents?: SaleDocument[];
 };
 
 const API = "/api/bff";
@@ -47,6 +57,64 @@ export async function fetchAllSales(): Promise<Sale[]> {
 export async function getSaleFromList(id: string): Promise<Sale | null> {
   const all = await fetchAllSales();
   return all.find((x) => x.id === id) ?? null;
+}
+
+export async function createSale(payload: {
+  vehicleId: string;
+  customerId?: string;
+  leadId?: string;
+  soldPrice?: number;
+  notes?: string;
+  soldByUserId?: string;
+}): Promise<Sale> {
+  const res = await fetch(`${API}/sales`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.message || `Error ${res.status}`);
+  return json;
+}
+
+export async function uploadSaleDocument(saleId: string, file: File): Promise<SaleDocument> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API}/sales/${saleId}/documents/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.message || `Error ${res.status}`);
+  return json;
+}
+
+export async function removeSaleDocument(saleId: string, docId: string): Promise<void> {
+  const res = await fetch(`${API}/sales/${saleId}/documents/${docId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => null);
+    throw new Error(json?.message || `Error ${res.status}`);
+  }
+}
+
+export async function updateSale(saleId: string, payload: {
+  soldPrice?: number;
+  notes?: string;
+  customerId?: string | null;
+  leadId?: string | null;
+  soldByUserId?: string;
+}): Promise<Sale> {
+  const res = await fetch(`${API}/sales/${saleId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.message || `Error ${res.status}`);
+  return json;
 }
 
 export function toNumber(v: any): number {

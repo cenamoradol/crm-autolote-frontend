@@ -6,8 +6,12 @@ export type SessionUser = {
     id: string;
     email: string;
     fullName: string | null;
+    phone?: string | null;
     isSuperAdmin: boolean;
     permissions: string[];
+    currency?: string;
+    currencySymbol?: string;
+    createdAt?: string;
 };
 
 export async function getServerSession(): Promise<SessionUser | null> {

@@ -21,6 +21,8 @@ export type VehicleUpsertPayload = {
   transmission?: string;
   fuelType?: string;
   engineSize?: number;
+  offerPrice?: string | number | null;
+  plate?: string;
 
   isPublished?: boolean;
   consignorId?: string;
@@ -62,6 +64,8 @@ export type Vehicle = {
   transmission?: string | null;
   fuelType?: string | null;
   engineSize?: number | null;
+  offerPrice?: string | number | null;
+  plate?: string | null;
 
   createdAt?: string;
   updatedAt?: string;
@@ -122,6 +126,8 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
+    offerPrice: payload.offerPrice ?? undefined,
+    plate: payload.plate ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     consignorId: payload.consignorId ?? undefined,
   };
@@ -149,6 +155,8 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
+    offerPrice: payload.offerPrice ?? undefined,
+    plate: payload.plate ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     consignorId: payload.consignorId ?? undefined,
   };

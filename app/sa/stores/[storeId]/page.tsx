@@ -12,6 +12,8 @@ type StoreDetail = {
   slug: string;
   isActive: boolean;
   logoUrl: string | null;
+  currency: string;
+  currencySymbol: string;
   domains?: { id: string; domain: string; isPrimary: boolean }[];
   branches?: { id: string; name: string; address: string | null; isPrimary: boolean }[];
   members?: {
@@ -21,6 +23,23 @@ type StoreDetail = {
     permissions: Record<string, string[]>;
     permissionSetName?: string | null;
   }[];
+  subscriptions?: {
+    id: string;
+    status: string;
+    startsAt: string;
+    endsAt: string | null;
+    plan: { name: string; code: string };
+    amount: string | number;
+  }[];
+  totalPerceived?: string | number;
+};
+
+type Plan = {
+  id: string;
+  name: string;
+  code: string;
+  priceMonthly: string;
+  currency: string;
 };
 
 export default function StoreDetailPage({
@@ -40,12 +59,25 @@ export default function StoreDetailPage({
   const [err, setErr] = useState<string | null>(null);
   const [supporting, setSupporting] = useState(false);
 
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [licenseForm, setLicenseForm] = useState({
+    planId: "",
+    months: 1,
+    amount: "0"
+  });
+  const [savingLicense, setSavingLicense] = useState(false);
+
   async function load() {
     setLoading(true);
     setErr(null);
     try {
-      const d = await apiFetch<StoreDetail>(`/sa/stores/${storeId}`);
+      const [d, p] = await Promise.all([
+        apiFetch<StoreDetail>(`/sa/stores/${storeId}`),
+        apiFetch<Plan[]>("/sa/plans")
+      ]);
       setData(d);
+      setPlans(p);
     } catch (e: any) {
       setErr(e.message || "Error cargando store");
     } finally {
@@ -159,6 +191,24 @@ export default function StoreDetailPage({
     }
   }
 
+  async function onSaveLicense(e: React.FormEvent) {
+    e.preventDefault();
+    if (!licenseForm.planId) return;
+    setSavingLicense(true);
+    try {
+      await apiFetch(`/sa/stores/${storeId}/subscriptions`, {
+        method: "POST",
+        body: JSON.stringify(licenseForm)
+      });
+      setShowLicenseModal(false);
+      await load();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setSavingLicense(false);
+    }
+  }
+
   // --- End Logic ---
 
   async function enterSupportMode() {
@@ -190,7 +240,9 @@ export default function StoreDetailPage({
     name: "",
     slug: "",
     isActive: true,
-    logoUrl: ""
+    logoUrl: "",
+    currency: "USD",
+    currencySymbol: "$"
   });
 
   function openEdit() {
@@ -199,7 +251,9 @@ export default function StoreDetailPage({
       name: data.name,
       slug: data.slug,
       isActive: data.isActive,
-      logoUrl: data.logoUrl || ""
+      logoUrl: data.logoUrl || "",
+      currency: data.currency || "USD",
+      currencySymbol: data.currencySymbol || "$"
     });
     setEditingStore(true);
   }
@@ -546,6 +600,99 @@ export default function StoreDetailPage({
 
         </div>
       </div>
+
+      {/* License Management Section */}
+      <div className="overflow-hidden rounded-xl bg-white shadow-md border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+        <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-700 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-yellow-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+            </svg>
+            Gestión de Licencia
+          </h2>
+          <button
+            onClick={() => setShowLicenseModal(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-yellow-500/10 px-3 py-1 text-xs font-bold text-yellow-700 hover:bg-yellow-500/20 transition-all dark:bg-yellow-500/20 dark:text-yellow-400"
+          >
+            Activar / Renovar
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Plan Actual</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  {data.subscriptions?.[0]?.plan?.name || "Sin Plan Activo"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Estado</p>
+                <p className="mt-1">
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold ring-1 ring-inset ${data.subscriptions?.[0]?.status === 'ACTIVE'
+                    ? "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-500/10 dark:text-green-400"
+                    : "bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-500/10 dark:text-red-400"
+                    }`}>
+                    {data.subscriptions?.[0]?.status || "PENDIENTE"}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Vence el</p>
+                <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  {data.subscriptions?.[0]?.endsAt
+                    ? new Date(data.subscriptions[0].endsAt).toLocaleDateString()
+                    : "-"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-4 dark:border-blue-900/20 dark:bg-blue-900/10">
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-500 dark:text-blue-400">Total Percibido</p>
+                <p className="mt-1 text-lg font-black text-blue-700 dark:text-blue-400">
+                  {data.currency || "USD"} {Number(data.totalPerceived || 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {data.subscriptions && data.subscriptions.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Historial Reciente</h3>
+                <div className="overflow-hidden rounded-lg border border-slate-100 dark:border-slate-700">
+                  <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
+                    <thead className="bg-slate-50 dark:bg-slate-900/50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-500">Plan</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-500">Inicio</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-500">Fin</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-500 text-right">Monto</th>
+                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-500">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                      {data.subscriptions.map(s => (
+                        <tr key={s.id} className="text-xs">
+                          <td className="px-4 py-2 text-slate-700 dark:text-slate-300 font-medium">{s.plan?.name}</td>
+                          <td className="px-4 py-2 text-slate-500">{new Date(s.startsAt).toLocaleDateString()}</td>
+                          <td className="px-4 py-2 text-slate-500">{s.endsAt ? new Date(s.endsAt).toLocaleDateString() : "-"}</td>
+                          <td className="px-4 py-2 text-slate-900 dark:text-white font-bold text-right">
+                            {data.currencySymbol || "$"}{Number(s.amount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`px-1.5 py-0.5 rounded ${s.status === 'ACTIVE' ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                              }`}>
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Edit Store Modal */}
       {editingStore && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
@@ -594,6 +741,31 @@ export default function StoreDetailPage({
                   value={editForm.logoUrl}
                   onChange={(e) => setEditForm(p => ({ ...p, logoUrl: e.target.value }))}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Moneda (ISO)
+                  </label>
+                  <input
+                    className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    value={editForm.currency}
+                    onChange={(e) => setEditForm(p => ({ ...p, currency: e.target.value }))}
+                    placeholder="Ej: HNL, USD"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Símbolo
+                  </label>
+                  <input
+                    className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    value={editForm.currencySymbol}
+                    onChange={(e) => setEditForm(p => ({ ...p, currencySymbol: e.target.value }))}
+                    placeholder="Ej: L., $"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center pt-2">
@@ -700,6 +872,86 @@ export default function StoreDetailPage({
                   type="submit"
                 >
                   Guardar
+                </LoadingButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* License Modal */}
+      {showLicenseModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-800 border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Activar Licencia</h3>
+              <button
+                onClick={() => setShowLicenseModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={onSaveLicense} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  Seleccionar Plan
+                </label>
+                <select
+                  required
+                  className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  value={licenseForm.planId}
+                  onChange={(e) => setLicenseForm(p => ({ ...p, planId: e.target.value }))}
+                >
+                  <option value="">Seleccione un plan...</option>
+                  {plans.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.currency} {p.priceMonthly}/mes)</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  Duración (Meses)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  value={licenseForm.months}
+                  onChange={(e) => setLicenseForm(p => ({ ...p, months: parseInt(e.target.value) }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  Monto Cobrado (Referencial)
+                </label>
+                <input
+                  type="number"
+                  className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  value={licenseForm.amount}
+                  onChange={(e) => setLicenseForm(p => ({ ...p, amount: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowLicenseModal(false)}
+                  className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700"
+                >
+                  Cancelar
+                </button>
+                <LoadingButton
+                  loading={savingLicense}
+                  className="flex-1 justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 focus:outline-none"
+                  type="submit"
+                >
+                  Activar Ahora
                 </LoadingButton>
               </div>
             </form>

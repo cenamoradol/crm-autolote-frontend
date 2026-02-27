@@ -7,9 +7,69 @@ export type Customer = {
   phone?: string | null;
   email?: string | null;
   documentId?: string | null;
+  status?: string;
 
   createdAt?: string | null;
   updatedAt?: string | null;
+};
+
+export type CustomerPreference = {
+  id: string;
+  brandId?: string | null;
+  modelId?: string | null;
+  yearFrom?: number | null;
+  yearTo?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  isActive: boolean;
+  notes?: string | null;
+  createdAt?: string;
+  brand?: { id: string; name: string } | null;
+  model?: { id: string; name: string } | null;
+};
+
+export type CustomerActivity = {
+  id: string;
+  type: string;
+  notes?: string | null;
+  createdAt?: string;
+  createdBy?: { id: string; fullName: string | null } | null;
+};
+
+export type CustomerSale = {
+  id: string;
+  soldAt?: string;
+  soldPrice?: number;
+  notes?: string;
+  vehicle: {
+    id: string;
+    publicId: string;
+    year?: number;
+    price?: number;
+    brand?: { id: string; name: string } | null;
+    model?: { id: string; name: string } | null;
+    media?: { url: string }[];
+  };
+  soldBy?: { id: string; fullName: string | null } | null;
+};
+
+export type CustomerDetail = Customer & {
+  preferences: CustomerPreference[];
+  activities: CustomerActivity[];
+  sales: CustomerSale[];
+};
+
+export type MatchingVehicle = {
+  id: string;
+  publicId: string;
+  status: string;
+  year?: number;
+  price?: number;
+  mileage?: number;
+  createdAt?: string;
+  brand?: { id: string; name: string } | null;
+  model?: { id: string; name: string } | null;
+  media?: { url: string }[];
 };
 
 export type CustomerListMeta = {
@@ -37,6 +97,7 @@ function normalizeCustomer(raw: any): Customer | null {
     phone: raw?.phone ?? null,
     email: raw?.email ?? null,
     documentId: raw?.documentId ?? raw?.document_id ?? null,
+    status: raw?.status ?? "ACTIVE",
     createdAt: raw?.createdAt ?? raw?.created_at ?? null,
     updatedAt: raw?.updatedAt ?? raw?.updated_at ?? null
   };
@@ -44,7 +105,7 @@ function normalizeCustomer(raw: any): Customer | null {
 
 function extractArray(input: any): any[] {
   if (Array.isArray(input)) return input;
-  if (Array.isArray(input?.data)) return input.data; // <- tu backend suele usar {data, meta}
+  if (Array.isArray(input?.data)) return input.data;
   if (Array.isArray(input?.items)) return input.items;
   if (Array.isArray(input?.results)) return input.results;
   return [];
@@ -84,7 +145,6 @@ export type CustomerCreateInput = {
 export type CustomerUpdateInput = Partial<CustomerCreateInput>;
 
 function sanitize(body: CustomerCreateInput | CustomerUpdateInput) {
-  // ✅ SOLO campos permitidos (whitelist)
   const out: any = {};
   if ((body as any).fullName !== undefined) out.fullName = (body as any).fullName;
   if (body.phone !== undefined) out.phone = body.phone;
@@ -115,6 +175,18 @@ export async function getCustomer(id: string): Promise<Customer> {
   return c;
 }
 
+export async function getCustomerDetail(id: string): Promise<CustomerDetail> {
+  const raw = await apiFetch<any>(`/customers/${id}`);
+  const c = normalizeCustomer(raw);
+  if (!c) throw new Error("Customer inválido (UUID no válido).");
+  return {
+    ...c,
+    preferences: raw.preferences || [],
+    activities: raw.activities || [],
+    sales: raw.sales || [],
+  };
+}
+
 export async function createCustomer(body: CustomerCreateInput): Promise<Customer> {
   const raw = await apiFetch<any>(`/customers`, {
     method: "POST",
@@ -137,4 +209,51 @@ export async function updateCustomer(id: string, body: CustomerUpdateInput): Pro
 
 export async function deleteCustomer(id: string): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(`/customers/${id}`, { method: "DELETE" });
+}
+
+// ── Preferences ──
+
+export async function addCustomerPreference(
+  customerId: string,
+  data: { brandId?: string; modelId?: string; yearFrom?: number; yearTo?: number; minPrice?: number; maxPrice?: number; notes?: string }
+): Promise<CustomerPreference> {
+  return apiFetch<CustomerPreference>(`/customers/${customerId}/preferences`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeCustomerPreference(customerId: string, prefId: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/customers/${customerId}/preferences/${prefId}`, { method: "DELETE" });
+}
+
+export async function toggleCustomerPreference(customerId: string, prefId: string): Promise<{ id: string; isActive: boolean }> {
+  return apiFetch<{ id: string; isActive: boolean }>(`/customers/${customerId}/preferences/${prefId}/toggle`, { method: "PATCH" });
+}
+
+// ── Activities ──
+
+export async function addCustomerActivity(
+  customerId: string,
+  data: { type: string; notes?: string }
+): Promise<CustomerActivity> {
+  return apiFetch<CustomerActivity>(`/customers/${customerId}/activities`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ── Status ──
+
+export async function updateCustomerStatus(customerId: string, status: string): Promise<{ id: string; status: string }> {
+  return apiFetch<{ id: string; status: string }>(`/customers/${customerId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ── Matching Vehicles ──
+
+export async function getMatchingVehicles(customerId: string): Promise<MatchingVehicle[]> {
+  return apiFetch<MatchingVehicle[]>(`/customers/${customerId}/matches`);
 }
