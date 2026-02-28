@@ -557,7 +557,14 @@ export default function SaUsersPage() {
               <span className="hidden sm:inline">Exportar CSV</span>
             </button>
             <button
-              onClick={() => setShowSetManager(true)}
+              onClick={() => {
+                const targetStoreId = assignStoreId || (stores.length > 0 ? stores[0].id : "");
+                if (targetStoreId) {
+                  setAssignStoreId(targetStoreId);
+                  loadSets(targetStoreId);
+                }
+                setShowSetManager(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
             >
               <IconShield className="w-5 h-5 text-blue-600" />
@@ -1058,8 +1065,23 @@ export default function SaUsersPage() {
           <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Conjuntos de Permisos</h3>
-                <p className="text-[10px] text-slate-500 uppercase font-medium">Tienda seleccionada: <span className="text-blue-600">{stores.find(s => s.id === assignStoreId)?.name}</span></p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2">Conjuntos de Permisos</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-500 uppercase font-medium">Tienda seleccionada:</span>
+                  <select
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-xs font-bold rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+                    value={assignStoreId}
+                    onChange={(e) => {
+                      const newStoreId = e.target.value;
+                      setAssignStoreId(newStoreId);
+                      loadSets(newStoreId);
+                      setEditingSet(null);
+                      setSetForm({ name: "", permissions: {} });
+                    }}
+                  >
+                    {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
               </div>
               <button
                 onClick={() => setShowSetManager(false)}
