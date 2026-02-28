@@ -382,16 +382,6 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Support Banner (Optional) */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-6 text-white shadow-lg">
-            <h3 className="font-bold text-lg mb-2">¿Necesitas ayuda?</h3>
-            <p className="text-blue-100 text-sm mb-4">
-              Consulta nuestra documentación o contacta a soporte técnico.
-            </p>
-            <button className="bg-white text-blue-600 px-4 py-2 rounded font-bold text-sm hover:bg-blue-50 transition-colors w-full">
-              Abrir Ticket
-            </button>
-          </div>
         </div>
 
       </div>

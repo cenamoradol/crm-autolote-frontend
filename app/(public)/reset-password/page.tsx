@@ -54,9 +54,6 @@ function ResetPasswordForm() {
                 </div>
                 <h2 className="text-[#0d131b] dark:text-white text-lg font-bold leading-tight">AutoLote CRM</h2>
             </div>
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold bg-blue-600 hover:bg-blue-700 transition-colors">
-                <span className="truncate">Contactar Soporte</span>
-            </button>
         </header>
     );
 

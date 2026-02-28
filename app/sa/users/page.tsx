@@ -138,7 +138,7 @@ const MODULES = [
   {
     key: "inventory",
     label: "Inventario",
-    actions: ["read", "create", "update", "delete", "media"],
+    actions: ["read", "create", "update", "delete"],
   },
   {
     key: "customers",
@@ -158,12 +158,12 @@ const MODULES = [
   {
     key: "activities",
     label: "Actividades",
-    actions: ["read", "create", "delete"],
+    actions: ["read", "create", "update", "delete"],
   },
   {
     key: "reports",
     label: "Reportes",
-    actions: ["read", "team"],
+    actions: ["read"],
   },
   {
     key: "store_settings",
@@ -173,7 +173,7 @@ const MODULES = [
   {
     key: "billing",
     label: "Facturación",
-    actions: ["read", "update", "pay"],
+    actions: ["read", "update"],
   },
   {
     key: "dashboard",
@@ -190,6 +190,7 @@ export default function SaUsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showStoreModal, setShowStoreModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
@@ -282,7 +283,7 @@ export default function SaUsersPage() {
   }, [filterStoreId]);
 
   useEffect(() => {
-    if (assignStoreId && assignUserId) {
+    if (showAssignModal && assignStoreId && assignUserId) {
       const loadMemberData = async () => {
         try {
           const members = await apiFetch<any[]>(`/sa/stores/${assignStoreId}/members`);
@@ -290,7 +291,8 @@ export default function SaUsersPage() {
           if (member) {
             setAssignPermissions(member.permissions || {});
             setAssignPermissionSetId(member.permissionSetId || "");
-            setIsDirectOverride(!!member.permissions && Object.keys(member.permissions).length > 0);
+            const hasDirectPerms = !!member.permissions && Object.keys(member.permissions).length > 0;
+            setIsDirectOverride(hasDirectPerms && !member.permissionSetId);
           } else {
             setAssignPermissions({});
             setAssignPermissionSetId("");
@@ -302,12 +304,12 @@ export default function SaUsersPage() {
         }
       };
       loadMemberData();
-    } else {
+    } else if (!showAssignModal) {
       setAssignPermissions({});
       setAssignPermissionSetId("");
       setIsDirectOverride(false);
     }
-  }, [assignStoreId, assignUserId]);
+  }, [showAssignModal, assignStoreId, assignUserId]);
 
   async function onCreateUser(e: React.FormEvent) {
     e.preventDefault();
@@ -379,6 +381,31 @@ export default function SaUsersPage() {
     }
   }
 
+  async function onAssignStore(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignStoreId || !assignUserId) return;
+
+    setAssigning(true);
+    try {
+      await apiFetch(`/sa/stores/${assignStoreId}/members/assign`, {
+        method: "POST",
+        body: JSON.stringify({
+          userId: assignUserId,
+          permissions: {},
+        })
+      });
+
+      toast.success("Tienda asignada ✅");
+      setShowStoreModal(false);
+      setAssignUserId("");
+      await loadAll();
+    } catch (e: any) {
+      toast.error(e.message || "Error asignando tienda");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
   async function onSaveSet(e: React.FormEvent) {
     e.preventDefault();
     if (!setForm.name || !assignStoreId) return;
@@ -412,6 +439,9 @@ export default function SaUsersPage() {
     const selectedSet = permissionSets.find(s => s.id === assignPermissionSetId);
     return selectedSet?.permissions || {};
   }, [isDirectOverride, assignPermissions, assignPermissionSetId, permissionSets]);
+
+  const targetUser = useMemo(() => users.find(u => u.id === assignUserId), [users, assignUserId]);
+  const targetStore = useMemo(() => stores.find(s => s.id === assignStoreId), [stores, assignStoreId]);
 
   function openEdit(user: User) {
     setEditingUser(user);
@@ -585,6 +615,33 @@ export default function SaUsersPage() {
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                     <button
+                      onClick={() => {
+                        setAssignUserId(u.id);
+                        if (u.store) {
+                          setAssignStoreId(u.store.id);
+                          loadSets(u.store.id);
+                          setShowAssignModal(true);
+                        } else {
+                          toast.error("Este usuario no tiene tienda asignada. Asígnale una tienda primero.");
+                        }
+                      }}
+                      className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      title="Asignar Permisos"
+                    >
+                      <IconShield className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAssignUserId(u.id);
+                        if (u.store) setAssignStoreId(u.store.id);
+                        setShowStoreModal(true);
+                      }}
+                      className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                      title="Asignar Tienda"
+                    >
+                      <IconStore className="w-5 h-5" />
+                    </button>
+                    <button
                       onClick={async () => {
                         if (!confirm("¿Eliminar permanentemente?")) return;
                         try {
@@ -632,7 +689,7 @@ export default function SaUsersPage() {
             setSelectedUserId(null);
             setAssignUserId(u.id);
             if (u.store) setAssignStoreId(u.store.id);
-            setShowAssignModal(true);
+            setShowStoreModal(true);
           }}
         />
       )}
@@ -779,18 +836,28 @@ export default function SaUsersPage() {
         </div>
       )}
 
-      {/* Assign Permissions Modal (moved from inline) */}
-      {(showAssignModal || (assignUserId && !showAssignModal && false)) && (
+      {/* Assign Permissions Modal (only permission sets & matrix) */}
+      {showAssignModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-700">
             <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
                   <IconShield className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase">Asignar Acceso</h3>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Vincular usuario a una tienda</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase">Asignar Permisos</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">
+                      {targetUser?.fullName || targetUser?.email || "Usuario"}
+                    </span>
+                    {targetStore && (
+                      <>
+                        <span className="text-[10px] text-slate-400">•</span>
+                        <span className="text-[10px] text-blue-600 uppercase font-bold">{targetStore.name}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setShowAssignModal(false); setAssignUserId(""); }} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -798,27 +865,18 @@ export default function SaUsersPage() {
               </button>
             </div>
             <form onSubmit={onAssign} className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Usuario</label>
-                  <select
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm"
-                    value={assignUserId}
-                    onChange={(e) => setAssignUserId(e.target.value)}
-                  >
-                    <option value="">Selecciona usuario...</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.email}</option>)}
-                  </select>
+              {/* User Info Card */}
+              <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-inner ${targetUser?.isSuperAdmin ? 'bg-indigo-600 text-white' : 'bg-blue-100 text-blue-600'}`}>
+                  {(targetUser?.fullName || targetUser?.email || "?").substring(0, 2).toUpperCase()}
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Tienda</label>
-                  <select
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm"
-                    value={assignStoreId}
-                    onChange={(e) => setAssignStoreId(e.target.value)}
-                  >
-                    {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">{targetUser?.fullName || "Sin nombre"}</div>
+                  <div className="text-xs text-slate-400">{targetUser?.email}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase text-slate-400">Tienda</div>
+                  <div className="text-sm font-bold text-slate-700 dark:text-slate-200">{targetStore?.name || "—"}</div>
                 </div>
               </div>
 
@@ -827,7 +885,7 @@ export default function SaUsersPage() {
                   <label className="block text-xs font-bold uppercase text-slate-500">Conjunto de Permisos (Rol)</label>
                 </div>
                 <select
-                  className="block w-full rounded-lg border-slate-200 py-2 text-sm"
+                  className="block w-full rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white py-2 text-sm"
                   value={assignPermissionSetId}
                   onChange={(e) => setAssignPermissionSetId(e.target.value)}
                 >
@@ -840,7 +898,7 @@ export default function SaUsersPage() {
                     type="checkbox"
                     checked={isDirectOverride}
                     onChange={(e) => setIsDirectOverride(e.target.checked)}
-                    className="w-4 h-4 rounded text-orange-600"
+                    className="w-4 h-4 rounded text-blue-600"
                   />
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Sobrescribir manualmente</span>
                 </label>
@@ -875,9 +933,65 @@ export default function SaUsersPage() {
               <LoadingButton
                 loading={assigning}
                 disabled={!canAssign}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20"
               >
-                Guardar Asignación
+                Guardar Permisos
+              </LoadingButton>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Store Modal (only store assignment) */}
+      {showStoreModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <IconStore className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase">Asignar Tienda</h3>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold">
+                    {targetUser?.fullName || targetUser?.email || "Usuario"}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => { setShowStoreModal(false); setAssignUserId(""); }} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <IconClose className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={onAssignStore} className="p-6 space-y-6">
+              {/* User Info Card */}
+              <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-inner ${targetUser?.isSuperAdmin ? 'bg-indigo-600 text-white' : 'bg-blue-100 text-blue-600'}`}>
+                  {(targetUser?.fullName || targetUser?.email || "?").substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">{targetUser?.fullName || "Sin nombre"}</div>
+                  <div className="text-xs text-slate-400">{targetUser?.email}</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Tienda a Asignar</label>
+                <select
+                  className="block w-full rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white py-2.5 px-4 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  value={assignStoreId}
+                  onChange={(e) => setAssignStoreId(e.target.value)}
+                >
+                  <option value="">Selecciona tienda...</option>
+                  {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              <LoadingButton
+                loading={assigning}
+                disabled={!assignStoreId || !assignUserId}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20"
+              >
+                Asignar Tienda
               </LoadingButton>
             </form>
           </div>

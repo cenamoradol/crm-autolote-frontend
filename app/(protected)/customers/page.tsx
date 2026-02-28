@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import { listCustomers, type Customer, type CustomerListMeta } from "@/lib/customers";
+import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { listCustomers, createCustomer, type Customer, type CustomerListMeta } from "@/lib/customers";
 
 function IconSearch({ className }: { className?: string }) {
   return (
@@ -14,11 +16,31 @@ function IconSearch({ className }: { className?: string }) {
   );
 }
 
+function IconDownload({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
+  );
+}
+
 function IconPlus({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M5 12h14" />
       <path d="M12 5v14" />
+    </svg>
+  );
+}
+
+function IconUpload({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" x2="12" y1="3" y2="15" />
     </svg>
   );
 }
@@ -83,7 +105,10 @@ export default function CustomersPage() {
   const [items, setItems] = useState<Customer[]>([]);
   const [meta, setMeta] = useState<CustomerListMeta>({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Search state
   const [q, setQ] = useState("");
@@ -121,6 +146,111 @@ export default function CustomersPage() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await listCustomers({
+        page: 1,
+        limit: 10000,
+        q: effectiveQ,
+        sortBy: "createdAt",
+        sortDir: "desc"
+      });
+
+      const dataToExport = res.data.map(c => ({
+        "ID": c.id,
+        "Nombre Completo": c.fullName,
+        "Teléfono": c.phone || "N/A",
+        "Email": c.email || "N/A",
+        "Documento": c.documentId || "N/A",
+        "Estado": STATUS_MAP[c.status || "ACTIVE"]?.label || c.status || "N/A",
+        "Fecha de Registro": c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "N/A"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
+
+      XLSX.writeFile(workbook, `Clientes_${new Date().toISOString().split('T')[0]}.csv`, { bookType: "csv" });
+      toast.success("Exportación completada");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Error al exportar datos");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: "binary" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (jsonData.length === 0) {
+          toast.error("El archivo está vacío");
+          return;
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        const toastId = toast.loading(`Importando 0 de ${jsonData.length}...`);
+
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          toast.loading(`Importando ${i + 1} de ${jsonData.length}...`, { id: toastId });
+
+          try {
+            let fullName = row["Nombre Completo"] || row["fullName"] || row["Nombre"] || row["Cliente"];
+            if (!fullName) {
+              errorCount++;
+              continue; // Saltar si no tiene nombre
+            }
+
+            await createCustomer({
+              fullName: String(fullName),
+              phone: row["Teléfono"] && row["Teléfono"] !== "N/A" ? String(row["Teléfono"]) : null,
+              email: row["Email"] && row["Email"] !== "N/A" ? String(row["Email"]) : null,
+              documentId: row["Documento"] && row["Documento"] !== "N/A" ? String(row["Documento"]) : null,
+            });
+            successCount++;
+          } catch (err) {
+            console.error("Error importando cliente", i, err);
+            errorCount++;
+          }
+        }
+
+        toast.success(`Importados: ${successCount}. Errores/Omitidos: ${errorCount}.`, { id: toastId });
+        load(1); // Recargar la tabla
+      } catch (error) {
+        console.error("Error al procesar el archivo:", error);
+        toast.error("Error al leer el archivo");
+      } finally {
+        setImporting(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''; // Clear input
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error("Error al leer el archivo");
+      setImporting(false);
+    };
+
+    reader.readAsBinaryString(file);
+  }
+
   useEffect(() => {
     load(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,18 +273,52 @@ export default function CustomersPage() {
           <div className="flex gap-3">
             <button
               onClick={() => load(meta.page)}
-              disabled={loading}
+              disabled={loading || exporting}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
             >
               <IconRefresh className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-              Refrescar
+              <span className="hidden sm:inline">Refrescar</span>
             </button>
+            <button
+              onClick={handleExport}
+              disabled={loading || exporting || importing || items.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+            >
+              {exporting ? (
+                <IconRefresh className="w-5 h-5 animate-spin" />
+              ) : (
+                <IconDownload className="w-5 h-5" />
+              )}
+              <span className="hidden sm:inline">Exportar CSV</span>
+            </button>
+
+            <input
+              type="file"
+              accept=".csv, .xlsx, .xls"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImport}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || exporting || importing}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+            >
+              {importing ? (
+                <IconRefresh className="w-5 h-5 animate-spin" />
+              ) : (
+                <IconUpload className="w-5 h-5" />
+              )}
+              <span className="hidden sm:inline">Importar CSV</span>
+            </button>
+
             <Link
               href="/customers/new"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md"
             >
               <IconPlus className="w-5 h-5" />
-              Nuevo Cliente
+              <span className="hidden sm:inline">Nuevo Cliente</span>
+              <span className="sm:hidden">Nuevo</span>
             </Link>
           </div>
         </div>

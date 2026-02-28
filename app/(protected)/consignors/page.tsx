@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { listConsignors, getConsignor, deleteConsignor, type Consignor } from "@/lib/consignors";
+import { useEffect, useState, useRef } from "react";
+import { listConsignors, getConsignor, deleteConsignor, createConsignor, type Consignor } from "@/lib/consignors";
 import { useUser } from "@/components/providers/UserProvider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 // --- Icons ---
 function IconSearch({ className }: { className?: string }) {
@@ -85,6 +86,35 @@ function IconClose({ className }: { className?: string }) {
     );
 }
 
+function IconDownload({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" x2="12" y1="15" y2="3" />
+        </svg>
+    );
+}
+
+function IconUpload({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" x2="12" y1="3" y2="15" />
+        </svg>
+    );
+}
+
+function IconFileText({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <rect width="20" height="16" x="2" y="4" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+    );
+}
+
 function IconMail({ className }: { className?: string }) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -109,9 +139,12 @@ export default function ConsignorsPage() {
 
     const [items, setItems] = useState<Consignor[]>([]);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
+    const [importing, setImporting] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     const [q, setQ] = useState("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // RBAC Client side protection (Server side also exists via Layout/Middleware but good to have here)
     useEffect(() => {
@@ -160,6 +193,107 @@ export default function ConsignorsPage() {
         }
     }
 
+    async function handleExport() {
+        if (!items || items.length === 0) return;
+        setExporting(true);
+        try {
+            const dataToExport = items.map(c => ({
+                "ID": c.id,
+                "Nombre Completo": c.fullName,
+                "Teléfono": c.phone || "N/A",
+                "Email": c.email || "N/A",
+                "DNI": c.dni || "N/A",
+                "RTN": c.rtn || "N/A",
+                "Fecha de Registro": c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "N/A",
+                "Vehículos": c.vehicles ? c.vehicles.length : 0
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Consignatarios");
+
+            XLSX.writeFile(workbook, `Consignatarios_${new Date().toISOString().split('T')[0]}.csv`, { bookType: "csv" });
+            toast.success("Exportación completada");
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al exportar datos");
+        } finally {
+            setExporting(false);
+        }
+    }
+
+    async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImporting(true);
+        const reader = new FileReader();
+
+        reader.onload = async (evt) => {
+            try {
+                const data = evt.target?.result;
+                const workbook = XLSX.read(data, { type: "binary" });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                if (jsonData.length === 0) {
+                    toast.error("El archivo está vacío");
+                    return;
+                }
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                const toastId = toast.loading(`Importando 0 de ${jsonData.length}...`);
+
+                for (let i = 0; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    toast.loading(`Importando ${i + 1} de ${jsonData.length}...`, { id: toastId });
+
+                    try {
+                        let fullName = row["Nombre Completo"] || row["fullName"] || row["Nombre"] || row["Cliente"];
+                        if (!fullName) {
+                            errorCount++;
+                            continue; // Saltar si no tiene nombre
+                        }
+
+                        await createConsignor({
+                            fullName: String(fullName),
+                            phone: row["Teléfono"] && row["Teléfono"] !== "N/A" ? String(row["Teléfono"]) : null,
+                            email: row["Email"] && row["Email"] !== "N/A" ? String(row["Email"]) : null,
+                            dni: row["DNI"] && row["DNI"] !== "N/A" ? String(row["DNI"]) : null,
+                            rtn: row["RTN"] && row["RTN"] !== "N/A" ? String(row["RTN"]) : null,
+                            notes: row["Notas"] ? String(row["Notas"]) : null
+                        });
+                        successCount++;
+                    } catch (err) {
+                        console.error("Error importando fila", i, err);
+                        errorCount++;
+                    }
+                }
+
+                toast.success(`Importados: ${successCount}. Errores/Omitidos: ${errorCount}.`, { id: toastId });
+                load(); // Recargar la tabla
+            } catch (error) {
+                console.error("Error al procesar el archivo:", error);
+                toast.error("Error al leer el archivo");
+            } finally {
+                setImporting(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = ''; // Clear input
+                }
+            }
+        };
+
+        reader.onerror = () => {
+            toast.error("Error al leer el archivo");
+            setImporting(false);
+        };
+
+        reader.readAsBinaryString(file);
+    }
+
     if (!canEdit) return null;
 
     return (
@@ -179,18 +313,52 @@ export default function ConsignorsPage() {
                     <div className="flex gap-3">
                         <button
                             onClick={() => load()}
-                            disabled={loading}
+                            disabled={loading || exporting}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
                         >
                             <IconRefresh className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                            Refrescar
+                            <span className="hidden sm:inline">Refrescar</span>
                         </button>
+                        <button
+                            onClick={handleExport}
+                            disabled={loading || exporting || importing || items.length === 0}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                        >
+                            {exporting ? (
+                                <IconRefresh className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <IconDownload className="w-5 h-5" />
+                            )}
+                            <span className="hidden sm:inline">Exportar CSV</span>
+                        </button>
+
+                        <input
+                            type="file"
+                            accept=".csv, .xlsx, .xls"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleImport}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={loading || exporting || importing}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                        >
+                            {importing ? (
+                                <IconRefresh className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <IconUpload className="w-5 h-5" />
+                            )}
+                            <span className="hidden sm:inline">Importar CSV</span>
+                        </button>
+
                         <Link
                             href="/consignors/new"
                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md"
                         >
                             <IconPlus className="w-5 h-5" />
-                            Nuevo Consignatario
+                            <span className="hidden sm:inline">Nuevo Consignatario</span>
+                            <span className="sm:hidden">Nuevo</span>
                         </Link>
                     </div>
                 </div>
