@@ -233,6 +233,14 @@ function IconSave({ className }: { className?: string }) {
   );
 }
 
+function IconDollarSign({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+}
 
 export default function VehicleCreatePage() {
   const sp = useSearchParams();
@@ -272,6 +280,12 @@ export default function VehicleCreatePage() {
   const [offerPrice, setOfferPrice] = useState("");
   const [plate, setPlate] = useState("");
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
+
+  // --- Administrative Data ---
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [repairCosts, setRepairCosts] = useState("");
+  const [paperworkCosts, setPaperworkCosts] = useState("");
+  const [otherCosts, setOtherCosts] = useState("");
 
   // --- Validation ---
   const [vinError, setVinError] = useState<string | null>(null);
@@ -380,6 +394,10 @@ export default function VehicleCreatePage() {
         price: toPriceOrUndefined(price),
         offerPrice: isOffer ? toPriceOrUndefined(offerPrice) : undefined,
         plate: toStringOrUndefined(plate),
+        purchasePrice: toPriceOrUndefined(purchasePrice),
+        repairCosts: toPriceOrUndefined(repairCosts),
+        paperworkCosts: toPriceOrUndefined(paperworkCosts),
+        otherCosts: toPriceOrUndefined(otherCosts),
         isPublished,
         consignorId: consignor?.value || undefined
       };
@@ -572,10 +590,9 @@ export default function VehicleCreatePage() {
                 <div>
                   <label className={labelClass}>Precio</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
                     <input
                       type="number"
-                      className={`${inputClass} pl-7`}
+                      className={inputClass}
                       placeholder="0.00"
                       value={price}
                       onChange={e => setPrice(e.target.value)}
@@ -597,11 +614,10 @@ export default function VehicleCreatePage() {
                     </div>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
                     <input
                       type="number"
                       disabled={!isOffer}
-                      className={`${inputClass} pl-7 disabled:bg-gray-50 disabled:text-gray-400`}
+                      className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
                       placeholder="Precio oferta"
                       value={offerPrice}
                       onChange={e => setOfferPrice(e.target.value)}
@@ -741,6 +757,69 @@ export default function VehicleCreatePage() {
                     <option value="Híbrido">Híbrido</option>
                     <option value="Eléctrico">Eléctrico</option>
                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Datos Administrativos */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+                <IconDollarSign className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-lg font-bold text-gray-900">Datos Administrativos</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-6">Esta información es solo de uso interno para la administración y no será visible para los clientes.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <label className={labelClass}>Precio de Compra</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={purchasePrice}
+                      onChange={e => setPurchasePrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Gastos de Reparaciones</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={repairCosts}
+                      onChange={e => setRepairCosts(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Gastos de Papelería</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={paperworkCosts}
+                      onChange={e => setPaperworkCosts(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Otros Gastos</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={otherCosts}
+                      onChange={e => setOtherCosts(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

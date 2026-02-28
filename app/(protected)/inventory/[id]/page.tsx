@@ -556,6 +556,12 @@ export default function VehicleEditPage() {
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
   const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
 
+  // Administrative Costs
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [repairCosts, setRepairCosts] = useState("");
+  const [paperworkCosts, setPaperworkCosts] = useState("");
+  const [otherCosts, setOtherCosts] = useState("");
+
   // Catalogs
   const [branches, setBranches] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
@@ -598,6 +604,13 @@ export default function VehicleEditPage() {
           setOfferPrice(v.offerPrice ? String(v.offerPrice) : "");
           setIsOffer(!!v.offerPrice);
           setIsPublished(!!v.isPublished);
+
+          // Administrative Costs
+          setPurchasePrice(v.purchasePrice ? String(v.purchasePrice) : "");
+          setRepairCosts(v.repairCosts ? String(v.repairCosts) : "");
+          setPaperworkCosts(v.paperworkCosts ? String(v.paperworkCosts) : "");
+          setOtherCosts(v.otherCosts ? String(v.otherCosts) : "");
+
           if (v.consignor) {
             setConsignor({
               value: v.consignor.id,
@@ -650,6 +663,10 @@ export default function VehicleEditPage() {
         offerPrice: isOffer ? toStringOrUndefined(offerPrice) : (offerPrice === "" ? null : undefined),
         plate: toStringOrUndefined(plate),
         vehicleTypeId: vehicleTypeId || undefined,
+        purchasePrice: toStringOrUndefined(purchasePrice),
+        repairCosts: toStringOrUndefined(repairCosts),
+        paperworkCosts: toStringOrUndefined(paperworkCosts),
+        otherCosts: toStringOrUndefined(otherCosts),
         isPublished,
         consignorId: consignor?.value || undefined
       });
@@ -951,6 +968,73 @@ export default function VehicleEditPage() {
                 <p className="mt-2 text-xs text-gray-500">
                   Asigna al cliente dueño del vehículo si este es recibido en consignación para su venta.
                 </p>
+              </div>
+            </div>
+
+            {/* Section 4: Datos Administrativos */}
+            <div className={sectionClass}>
+              <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+                <IconDollarSign className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-lg font-bold text-gray-900">Datos Administrativos</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-6">Esta información es solo de uso interno para la administración y no será visible para los clientes.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <label className={labelClass}>Precio de Compra</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={purchasePrice}
+                      onChange={e => setPurchasePrice(e.target.value)}
+                      disabled={isArchived || !canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Gastos de Reparaciones</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={repairCosts}
+                      onChange={e => setRepairCosts(e.target.value)}
+                      disabled={isArchived || !canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Gastos de Papelería</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={paperworkCosts}
+                      onChange={e => setPaperworkCosts(e.target.value)}
+                      disabled={isArchived || !canEdit}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Otros Gastos</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0.00"
+                      value={otherCosts}
+                      onChange={e => setOtherCosts(e.target.value)}
+                      disabled={isArchived || !canEdit}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

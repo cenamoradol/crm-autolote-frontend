@@ -24,6 +24,11 @@ export type VehicleUpsertPayload = {
   offerPrice?: string | number | null;
   plate?: string;
 
+  purchasePrice?: string | number | null;
+  repairCosts?: string | number | null;
+  paperworkCosts?: string | number | null;
+  otherCosts?: string | number | null;
+
   isPublished?: boolean;
   consignorId?: string;
 };
@@ -66,6 +71,11 @@ export type Vehicle = {
   engineSize?: number | null;
   offerPrice?: string | number | null;
   plate?: string | null;
+
+  purchasePrice?: number | string | null;
+  repairCosts?: number | string | null;
+  paperworkCosts?: number | string | null;
+  otherCosts?: number | string | null;
 
   createdAt?: string;
   updatedAt?: string;
@@ -128,6 +138,10 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     engineSize: payload.engineSize ?? undefined,
     offerPrice: payload.offerPrice ?? undefined,
     plate: payload.plate ?? undefined,
+    purchasePrice: payload.purchasePrice ?? undefined,
+    repairCosts: payload.repairCosts ?? undefined,
+    paperworkCosts: payload.paperworkCosts ?? undefined,
+    otherCosts: payload.otherCosts ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     consignorId: payload.consignorId ?? undefined,
   };
@@ -157,6 +171,10 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     engineSize: payload.engineSize ?? undefined,
     offerPrice: payload.offerPrice ?? undefined,
     plate: payload.plate ?? undefined,
+    purchasePrice: payload.purchasePrice ?? undefined,
+    repairCosts: payload.repairCosts ?? undefined,
+    paperworkCosts: payload.paperworkCosts ?? undefined,
+    otherCosts: payload.otherCosts ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     consignorId: payload.consignorId ?? undefined,
   };

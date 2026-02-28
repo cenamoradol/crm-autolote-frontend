@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Modal } from "@/components/ui/Modal";
 import { getVehicle, type Vehicle } from "@/lib/vehicles";
-
-function money(v: any) {
-    if (v === null || v === undefined || v === "") return "-";
-    const n = Number(v);
-    if (Number.isNaN(n)) return String(v);
-    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
+import { formatPrice } from "@/lib/currency";
+import { useUser } from "@/components/providers/UserProvider";
 
 interface DetailRowProps {
     label: string;
@@ -39,9 +34,12 @@ interface VehicleDetailsModalProps {
 }
 
 export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalProps) {
+    const user = useUser();
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const money = (v: any) => formatPrice(v, user.currencySymbol, user.currency);
 
     useEffect(() => {
         if (vehicleId) {
@@ -178,6 +176,35 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             <DetailRow label="Motor" value={vehicle.engineSize ? `${vehicle.engineSize} L` : null} icon="build" />
                             <DetailRow label="Combustible" value={vehicle.fuelType} icon="local_gas_station" />
                             <DetailRow label="Ubicación" value={vehicle.branch?.name} icon="store" />
+                        </div>
+                    </div>
+
+                    {/* Consignación (Dueño) */}
+                    {vehicle.consignor && (
+                        <div>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-slate-400">person</span>
+                                Consignación (Dueño)
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <DetailRow label="Nombre Completo" value={vehicle.consignor.fullName} />
+                                <DetailRow label="Email" value={vehicle.consignor.email} />
+                                <DetailRow label="Teléfono" value={vehicle.consignor.phone} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Datos Administrativos (solo visibles para usuarios con permisos según lógica de interfaz) */}
+                    <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-600">attach_money</span>
+                            Datos Administrativos
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <DetailRow label="Precio de Compra" value={vehicle.purchasePrice ? money(vehicle.purchasePrice) : "-"} />
+                            <DetailRow label="Gastos de Reparación" value={vehicle.repairCosts ? money(vehicle.repairCosts) : "-"} />
+                            <DetailRow label="Gastos de Papelería" value={vehicle.paperworkCosts ? money(vehicle.paperworkCosts) : "-"} />
+                            <DetailRow label="Otros Gastos" value={vehicle.otherCosts ? money(vehicle.otherCosts) : "-"} />
                         </div>
                     </div>
 
