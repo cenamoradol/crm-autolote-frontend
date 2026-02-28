@@ -219,6 +219,7 @@ export default function SaleDetailPage() {
   const vehicleTitle = vehicleFull?.title ?? vehicleBasic?.title ?? [vehicleBasic?.brand?.name, vehicleBasic?.model?.name, vehicleBasic?.year].filter(Boolean).join(" ") ?? "S/N";
 
   const sellerName = sale.soldBy?.fullName || sale.soldBy?.email || "Sin asignar";
+  const creatorName = sale.createdBy?.fullName || sale.createdBy?.email || "Sistema";
   const customerName = sale.customer?.fullName || sale.lead?.fullName || "Consumidor Final";
   const customerEmail = sale.customer?.email || sale.lead?.email;
   const customerPhone = sale.customer?.phone || sale.lead?.phone;
@@ -514,8 +515,22 @@ export default function SaleDetailPage() {
                 )}
               </div>
 
+              {/* Registrado Por */}
+              <div className="space-y-3 pt-4 border-t border-slate-50">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Registrado por</label>
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-xs font-black text-slate-500 uppercase">
+                    {creatorName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-800">{creatorName}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Creador del registro</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Cliente */}
-              <div className="space-y-3">
+              <div className="space-y-3 pt-4 border-t border-slate-50">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Información del Cliente</label>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
                   <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-black text-indigo-600 uppercase">

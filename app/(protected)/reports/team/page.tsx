@@ -175,8 +175,11 @@ export default function TeamReportsPage() {
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 font-bold">
                                 <th className="px-6 py-4">Usuario</th>
+                                <th className="px-6 py-4 text-center">Clientes Agregados</th>
+                                <th className="px-6 py-4 text-center">Consignatarios Agregados</th>
                                 <th className="px-6 py-4 text-center">Vehículos Añadidos</th>
                                 <th className="px-6 py-4 text-center">Vehículos Vendidos</th>
+                                <th className="px-6 py-4 text-center">Ventas Creadas</th>
                                 <th className="px-6 py-4 text-center">Actividades Registradas</th>
                             </tr>
                         </thead>
@@ -196,10 +199,19 @@ export default function TeamReportsPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{row.metrics.customersCreated}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{row.metrics.consignorsCreated}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
                                             <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{row.metrics.vehiclesCreated}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{row.metrics.vehiclesSold}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{row.metrics.salesCreated || 0}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{row.metrics.activitiesLogged}</span>
@@ -209,7 +221,7 @@ export default function TeamReportsPage() {
                             ) : (
                                 !loading && (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                                             No hay datos de rendimiento disponibles de tu equipo para las fechas seleccionadas.
                                         </td>
                                     </tr>

@@ -497,6 +497,7 @@ export default function SalesPage() {
                       <th className="px-6 py-4">Vehículo</th>
                       <th className="px-6 py-4">Monto</th>
                       <th className="px-6 py-4">Comprador</th>
+                      <th className="px-6 py-4">Responsable</th>
                       <th className="px-6 py-4 text-center">Docs</th>
                       <th className="px-6 py-4 text-right">Acciones</th>
                     </tr>
@@ -527,6 +528,18 @@ export default function SalesPage() {
                                   {client.charAt(0)}
                                 </div>
                                 <span className="text-xs font-bold">{client}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-slate-600">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2" title="Vendedor que cerró la venta">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase w-16">Vendedor:</span>
+                                  <span className="text-xs font-bold text-slate-800">{s.soldBy?.fullName || s.soldBy?.email || "---"}</span>
+                                </div>
+                                <div className="flex items-center gap-2" title="Usuario que registró la venta en el sistema">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase w-16">Registró:</span>
+                                  <span className="text-xs font-medium text-slate-600">{s.createdBy?.fullName || s.createdBy?.email || "---"}</span>
+                                </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-center">

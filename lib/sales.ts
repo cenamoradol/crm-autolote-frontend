@@ -35,6 +35,7 @@ export type Sale = {
   customer?: { id: string; fullName: string; phone?: string | null; email?: string | null } | null;
   lead?: { id: string; fullName?: string | null; phone?: string | null; email?: string | null; status?: string | null } | null;
   soldBy?: { id: string; email?: string | null; fullName?: string | null } | null;
+  createdBy?: { id: string; email?: string | null; fullName?: string | null } | null;
   documents?: SaleDocument[];
 };
 
