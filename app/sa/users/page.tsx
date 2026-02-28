@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { apiFetch } from "@/lib/api";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 type User = {
   id: string;
@@ -129,6 +130,16 @@ function IconStore({ className }: { className?: string }) {
   );
 }
 
+function IconDownload({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
+  );
+}
+
 const MODULES = [
   {
     key: "sales",
@@ -192,11 +203,12 @@ export default function SaUsersPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showStoreModal, setShowStoreModal] = useState(false);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [savingUser, setSavingUser] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [savingSet, setSavingSet] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const [permissionSets, setPermissionSets] = useState<PermissionSet[]>([]);
   const [showSetManager, setShowSetManager] = useState(false);
@@ -395,14 +407,42 @@ export default function SaUsersPage() {
         })
       });
 
-      toast.success("Tienda asignada ✅");
+      toast.success("Tienda asignada correctamente");
       setShowStoreModal(false);
       setAssignUserId("");
       await loadAll();
     } catch (e: any) {
-      toast.error(e.message || "Error asignando tienda");
+      toast.error(e.message || "Error al asignar la tienda");
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function handleExport() {
+    if (!filteredUsers || filteredUsers.length === 0) return;
+    setExporting(true);
+    try {
+      const dataToExport = filteredUsers.map(u => ({
+        "ID": u.id,
+        "Nombre Completo": u.fullName || "Sin nombre",
+        "Email": u.email,
+        "Usuario Maestro": u.isSuperAdmin ? "Sí" : "No",
+        "Tienda Asignada": u.store ? u.store.name : "No asignado",
+        "Slug Tienda": u.store ? u.store.slug : "N/A",
+        "Estado": u.isActive ? "Activo" : "Suspendido"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
+
+      XLSX.writeFile(workbook, `Usuarios_${new Date().toISOString().split('T')[0]}.csv`, { bookType: "csv" });
+      toast.success("Exportación completada");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al exportar datos");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -505,18 +545,32 @@ export default function SaUsersPage() {
           </div>
           <div className="flex gap-3">
             <button
+              onClick={handleExport}
+              disabled={loading || exporting || filteredUsers.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+            >
+              {exporting ? (
+                <IconRefresh className="w-5 h-5 animate-spin" />
+              ) : (
+                <IconDownload className="w-5 h-5" />
+              )}
+              <span className="hidden sm:inline">Exportar CSV</span>
+            </button>
+            <button
               onClick={() => setShowSetManager(true)}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
             >
               <IconShield className="w-5 h-5 text-blue-600" />
-              Grupos de Permisos
+              <span className="hidden sm:inline">Grupos de Permisos</span>
+              <span className="sm:hidden">Grupos</span>
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md"
             >
               <IconPlus className="w-5 h-5" />
-              Nuevo Usuario
+              <span className="hidden sm:inline">Nuevo Usuario</span>
+              <span className="sm:hidden">Nuevo</span>
             </button>
           </div>
         </div>
