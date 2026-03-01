@@ -171,7 +171,7 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             <DetailRow label="Tipo" value={vehicle.vehicleType?.name} icon="directions_car" />
                             <DetailRow label="Año" value={vehicle.year} icon="calendar_today" />
                             <DetailRow label="Kilometraje" value={vehicle.mileage ? `${vehicle.mileage.toLocaleString()} km` : null} icon="speed" />
-                            <DetailRow label="Color" value={vehicle.color} icon="palette" />
+                            <DetailRow label="Color" value={vehicle.colorRef?.name || "-"} icon="palette" />
                             <DetailRow label="Transmisión" value={vehicle.transmission} icon="settings" />
                             <DetailRow label="Motor" value={vehicle.engineSize ? `${vehicle.engineSize} L` : null} icon="build" />
                             <DetailRow label="Combustible" value={vehicle.fuelType} icon="local_gas_station" />

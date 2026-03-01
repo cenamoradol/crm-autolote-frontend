@@ -14,3 +14,10 @@ export async function listModelsByBrand(brandId: string, q?: string): Promise<Mo
   if (q) qs.set("q", q);
   return apiFetch<Model[]>(`/brands/${brandId}/models${qs.toString() ? `?${qs}` : ""}`);
 }
+
+export type ColorModel = { id: string; name: string };
+export async function listColors(q?: string): Promise<ColorModel[]> {
+  const qs = new URLSearchParams();
+  if (q) qs.set("q", q);
+  return apiFetch<ColorModel[]>(`/colors${qs.toString() ? `?${qs}` : ""}`);
+}

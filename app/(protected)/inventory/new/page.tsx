@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createVehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import SearchSelectTW from "@/components/common/SearchSelectTW";
+import { listColors, ColorModel } from "@/lib/catalog";
 
 // --- Types ---
 type Branch = {
@@ -270,7 +271,7 @@ export default function VehicleCreatePage() {
   const [mileage, setMileage] = useState("");
   const [vin, setVin] = useState("");
 
-  const [color, setColor] = useState("");
+  const [colorOption, setColorOption] = useState<{ value: string; label: string } | null>(null);
   const [transmission, setTransmission] = useState("");
   const [fuelType, setFuelType] = useState("");
   const [engineSize, setEngineSize] = useState("");
@@ -387,7 +388,7 @@ export default function VehicleCreatePage() {
         year: toIntOrUndefined(year),
         mileage: toIntOrUndefined(mileage),
         vin: toStringOrUndefined(vin),
-        color: toStringOrUndefined(color),
+        colorId: colorOption?.value || undefined,
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
@@ -705,29 +706,15 @@ export default function VehicleCreatePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className={labelClass}>Color Exterior</label>
-                  {/* Using a simple select for now as per design mockup showing dropdowns likely, or inputs */}
-                  {/* Mockup shows "Blanco" in a dropdown-like box, I will use Select for premium feel if I had options, but I'll use input behaving like others or a select with presets + custom?
-                             The `VehicleForm` used string input. I'll stick to input for data entry flexibility unless I hardcode common colors.
-                             Wait, the mockup specifically shows a dropdown arrow. I should probably make it a select with common options + 'Other'.
-                             Actually, let's keep it as an input styled nicely, or a select effectively.
-                             For the sake of "Functiona con lo que tenemos", VehicleForm was input.
-                             But mockup shows dropdown. I'll make it a select with some defaults.
-                         */}
-                  <select
-                    className={selectClass}
-                    value={color}
-                    onChange={e => setColor(e.target.value)}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="Blanco">Blanco</option>
-                    <option value="Negro">Negro</option>
-                    <option value="Gris">Gris</option>
-                    <option value="Plata">Plata</option>
-                    <option value="Azul">Azul</option>
-                    <option value="Rojo">Rojo</option>
-                    {/* Fallback for existing data if it was something else? new page so no existing data */}
-                    {color && !["Blanco", "Negro", "Gris", "Plata", "Azul", "Rojo"].includes(color) && <option value={color}>{color}</option>}
-                  </select>
+                  <SearchSelectTW
+                    value={colorOption}
+                    onChange={setColorOption}
+                    placeholder="Buscar o seleccionar..."
+                    loadOptions={async (query) => {
+                      const colors = await listColors(query);
+                      return colors.map((c) => ({ value: c.id, label: c.name }));
+                    }}
+                  />
                 </div>
 
                 <div>

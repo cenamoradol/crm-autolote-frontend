@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { getVehicle, updateVehicle, type Vehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import { getReservationByVehicle, type Reservation } from "@/lib/reservations";
 import SearchSelectTW from "@/components/common/SearchSelectTW";
+import { listColors } from "@/lib/catalog";
 import { useUser } from "@/components/providers/UserProvider";
 import {
   DndContext,
@@ -544,7 +545,7 @@ export default function VehicleEditPage() {
   const [mileage, setMileage] = useState("");
   const [vin, setVin] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState("");
+  const [colorOption, setColorOption] = useState<{ value: string; label: string } | null>(null);
   const [transmission, setTransmission] = useState("");
   const [fuelType, setFuelType] = useState("");
   const [engineSize, setEngineSize] = useState("");
@@ -595,7 +596,12 @@ export default function VehicleEditPage() {
           setMileage(v.mileage ? String(v.mileage) : "");
           setVin(v.vin || "");
           setDescription(v.description || "");
-          setColor(v.color || "");
+          const vAny: any = v;
+          if (vAny.colorRef) {
+            setColorOption({ value: vAny.colorRef.id, label: vAny.colorRef.name });
+          } else {
+            setColorOption(null);
+          }
           setTransmission(v.transmission || "");
           setFuelType(v.fuelType || "");
           setEngineSize(v.engineSize ? String(v.engineSize) : "");
@@ -656,7 +662,7 @@ export default function VehicleEditPage() {
         mileage: toIntOrUndefined(mileage),
         vin: toStringOrUndefined(vin),
         description: toStringOrUndefined(description),
-        color: toStringOrUndefined(color),
+        colorId: colorOption?.value || undefined,
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
@@ -892,17 +898,17 @@ export default function VehicleEditPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>
-                  <label className={labelClass}>Color</label>
-                  <select className={selectClass} value={color} onChange={e => setColor(e.target.value)} disabled={isArchived || !canEdit}>
-                    <option value="">Seleccione...</option>
-                    <option value="Blanco">Blanco</option>
-                    <option value="Negro">Negro</option>
-                    <option value="Gris">Gris</option>
-                    <option value="Plata">Plata</option>
-                    <option value="Azul">Azul</option>
-                    <option value="Rojo">Rojo</option>
-                    {color && !["Blanco", "Negro", "Gris", "Plata", "Azul", "Rojo"].includes(color) && <option value={color}>{color}</option>}
-                  </select>
+                  <label className={labelClass}>Color Exterior</label>
+                  <SearchSelectTW
+                    value={colorOption}
+                    onChange={setColorOption}
+                    placeholder="Buscar o seleccionar..."
+                    disabled={isArchived || !canEdit}
+                    loadOptions={async (query) => {
+                      const colors = await listColors(query);
+                      return colors.map((c) => ({ value: c.id, label: c.name }));
+                    }}
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Transmisión</label>

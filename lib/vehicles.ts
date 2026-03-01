@@ -17,7 +17,7 @@ export type VehicleUpsertPayload = {
   mileage?: number;
   vin?: string;
   stockNumber?: string; // existe en prisma, backend aún no lo setea en service
-  color?: string;
+  colorId?: string;
   transmission?: string;
   fuelType?: string;
   engineSize?: number;
@@ -66,6 +66,7 @@ export type Vehicle = {
   vin?: string | null;
   stockNumber?: string | null;
   color?: string | null;
+  colorRef?: { id: string; name: string } | null;
   transmission?: string | null;
   fuelType?: string | null;
   engineSize?: number | null;
@@ -132,7 +133,7 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     price: payload.price ?? undefined,
     mileage: payload.mileage ?? undefined,
     vin: payload.vin ?? undefined,
-    color: payload.color ?? undefined,
+    colorId: payload.colorId ?? undefined,
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
@@ -165,7 +166,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     price: payload.price ?? undefined,
     mileage: payload.mileage ?? undefined,
     vin: payload.vin ?? undefined,
-    color: payload.color ?? undefined,
+    colorId: payload.colorId ?? undefined,
     transmission: payload.transmission ?? undefined,
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,

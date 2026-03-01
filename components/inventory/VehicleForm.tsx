@@ -6,6 +6,8 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 
 // ✅ Usa el tipo ÚNICO del lib (evita mismatch con inventory/[id]/page.tsx)
 import type { VehicleUpsertPayload } from "@/lib/vehicles";
+import SearchSelectTW from "@/components/common/SearchSelectTW";
+import { listColors } from "@/lib/catalog";
 
 type Branch = {
   id: string;
@@ -120,7 +122,9 @@ export default function VehicleForm({
 
   const [mileage, setMileage] = useState(initial?.mileage ? String(initial.mileage) : "");
   const [vin, setVin] = useState((initial?.vin ?? "") as string);
-  const [color, setColor] = useState((initial?.color ?? "") as string);
+  const [colorOption, setColorOption] = useState<{ value: string; label: string } | null>(
+    (initial as any)?.colorRef ? { value: (initial as any).colorRef.id, label: (initial as any).colorRef.name } : null
+  );
   const [transmission, setTransmission] = useState((initial?.transmission ?? "") as string);
   const [fuelType, setFuelType] = useState((initial?.fuelType ?? "") as string);
   const [isPublished, setIsPublished] = useState(!!initial?.isPublished);
@@ -231,7 +235,7 @@ export default function VehicleForm({
       year: toIntOrUndefined(year),
       mileage: toIntOrUndefined(mileage),
       vin: toStringOrUndefined(vin),
-      color: toStringOrUndefined(color),
+      colorId: colorOption?.value || undefined,
       transmission: toStringOrUndefined(transmission),
       fuelType: toStringOrUndefined(fuelType),
 
@@ -394,13 +398,16 @@ export default function VehicleForm({
               </div>
 
               <div className="col-12 col-md-4">
-                <label className="form-label">Color</label>
-                <input
-                  className="form-control"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  placeholder="Ej: Blanco"
+                <label className="form-label">Color Exterior</label>
+                <SearchSelectTW
+                  value={colorOption}
+                  onChange={setColorOption}
+                  placeholder="Buscar o seleccionar..."
                   disabled={savingFinal}
+                  loadOptions={async (query) => {
+                    const colors = await listColors(query);
+                    return colors.map((c) => ({ value: c.id, label: c.name }));
+                  }}
                 />
               </div>
 
