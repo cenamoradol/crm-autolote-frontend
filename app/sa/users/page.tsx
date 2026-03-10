@@ -144,7 +144,7 @@ const MODULES = [
   {
     key: "sales",
     label: "Ventas",
-    actions: ["read", "create", "update", "delete", "approve"],
+    actions: ["read", "create", "update", "delete", "approve", "override_closed"],
   },
   {
     key: "inventory",

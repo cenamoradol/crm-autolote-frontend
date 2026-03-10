@@ -362,7 +362,7 @@ function SaleCard({ vehicleId, sale, onSaleRecorded }: { vehicleId: string; sale
   );
 }
 
-function SortableMediaItem({ m, handleDelete, reordering, disabled }: { m: any, handleDelete: (id: string) => void, reordering: boolean, disabled?: boolean }) {
+function SortableMediaItem({ m, handleDelete, handleSetCover, reordering, disabled }: { m: any, handleDelete: (id: string) => void, handleSetCover: (id: string) => void, reordering: boolean, disabled?: boolean }) {
   const {
     attributes,
     listeners,
@@ -401,7 +401,18 @@ function SortableMediaItem({ m, handleDelete, reordering, disabled }: { m: any, 
 
       <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all pointer-events-none" />
 
-      <div className="absolute top-1 right-1 flex gap-1 opacity-100 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!disabled && !m.isCover && (
+          <button
+            className="bg-yellow-400/90 text-yellow-900 p-1.5 rounded-full hover:bg-yellow-500 shadow-sm pointer-events-auto backdrop-blur-sm"
+            onClick={(e) => { e.stopPropagation(); handleSetCover(m.id); }}
+            title="Establecer como portada"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        )}
         {!disabled && (
           <button
             className="bg-red-500/80 text-white p-1.5 rounded-full hover:bg-red-600 shadow-sm pointer-events-auto backdrop-blur-sm"
@@ -414,7 +425,10 @@ function SortableMediaItem({ m, handleDelete, reordering, disabled }: { m: any, 
       </div>
 
       {m.isCover && (
-        <div className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+        <div className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
           PORTADA
         </div>
       )}
@@ -465,6 +479,18 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
     load();
   }
 
+  async function handleSetCover(mediaId: string) {
+    if (disabled) return;
+    try {
+      const res = await fetch(`/api/bff/vehicles/${vehicleId}/media/${mediaId}/cover`, { method: "PATCH" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success("Portada actualizada");
+      await load();
+    } catch {
+      toast.error("Error al establecer portada");
+    }
+  }
+
   async function handleDragEnd(event: DragEndEvent) {
     if (disabled) return;
     const { active, over } = event;
@@ -504,7 +530,7 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SortableContext items={media.map(m => m.id)} strategy={rectSortingStrategy}>
             {media.map((m) => (
-              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} reordering={reordering} disabled={disabled} />
+              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} handleSetCover={handleSetCover} reordering={reordering} disabled={disabled} />
             ))}
           </SortableContext>
 

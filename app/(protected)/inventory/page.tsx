@@ -25,6 +25,19 @@ const statusColors: Record<string, string> = {
 import { VehicleDetailsModal } from "@/components/inventory/VehicleDetailsModal";
 import { useUser } from "@/components/providers/UserProvider";
 
+function getVehicleMissingFields(v: Vehicle): string[] {
+  const missing: string[] = [];
+  if (!v.vin) missing.push("VIN");
+  if (!v.plate) missing.push("Placa");
+  if (!v.mileage) missing.push("Kilometraje");
+  if (!v.colorRef) missing.push("Color");
+  if (!v.year) missing.push("Año");
+  if (!v.engineSize) missing.push("Motor");
+  if (!v.fuelType) missing.push("Combustible");
+  if (!v.media || v.media.length < 4) missing.push(`Fotos (${v.media?.length ?? 0}/4)`);
+  return missing;
+}
+
 export default function InventoryPage() {
   const user = useUser();
   const permissions = user.permissions || [];
@@ -234,105 +247,121 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {items.map((v) => (
-                <tr
-                  key={v.id}
-                  onClick={() => setSelectedVehicleId(v.id)}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
-                        {v.offerPrice && (
-                          <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">Oferta</span>
-                        )}
+              {items.map((v) => {
+                const missingFields = getVehicleMissingFields(v);
+                const needsReview = missingFields.length > 0;
+                return (
+                  <tr
+                    key={v.id}
+                    onClick={() => setSelectedVehicleId(v.id)}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
+                          {v.offerPrice && (
+                            <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">Oferta</span>
+                          )}
+                          {needsReview && (
+                            <span className="relative group/badge">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                                Revisión
+                              </span>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-slate-800 text-white text-[11px] rounded-xl shadow-xl opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed">
+                                <span className="font-bold block mb-1">Campos faltantes:</span>
+                                {missingFields.map((f, i) => <span key={i} className="block">• {f}</span>)}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-slate-400 font-mono">{v.publicId || "ID-?"}</span>
+                          {v.plate && (
+                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold">{v.plate}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-slate-400 font-mono">{v.publicId || "ID-?"}</span>
-                        {v.plate && (
-                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold">{v.plate}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{v.year ?? "-"}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        {v.offerPrice ? (
+                          <>
+                            <span className="text-sm text-slate-400 line-through truncate">{money(v.price)}</span>
+                            <span className="text-sm text-orange-600 dark:text-orange-400 font-bold">{money(v.offerPrice)}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
                         )}
+                        {v.status === 'SOLD' && (v.soldPrice || v.sale?.soldPrice) ? (
+                          <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">
+                            Vendido: {money(v.soldPrice || v.sale?.soldPrice)}
+                          </span>
+                        ) : null}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                    {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{v.year ?? "-"}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      {v.offerPrice ? (
-                        <>
-                          <span className="text-sm text-slate-400 line-through truncate">{money(v.price)}</span>
-                          <span className="text-sm text-orange-600 dark:text-orange-400 font-bold">{money(v.offerPrice)}</span>
-                        </>
-                      ) : (
-                        <span className="text-sm text-slate-900 dark:text-white font-bold">{money(v.price)}</span>
-                      )}
-                      {v.status === 'SOLD' && (v.soldPrice || v.sale?.soldPrice) ? (
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">
-                          Vendido: {money(v.soldPrice || v.sale?.soldPrice)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {v.status ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[v.status] || "bg-gray-100 text-gray-800"}`}>
+                          {v.status === 'AVAILABLE' ? 'Disponible' : v.status === 'RESERVED' ? 'Reservado' : v.status === 'SOLD' ? 'Vendido' : v.status}
                         </span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {v.status ? (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[v.status] || "bg-gray-100 text-gray-800"}`}>
-                        {v.status === 'AVAILABLE' ? 'Disponible' : v.status === 'RESERVED' ? 'Reservado' : v.status === 'SOLD' ? 'Vendido' : v.status}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {v.isPublished ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                        Sí
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {canEdit && (
-                        <Link
-                          href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Editar"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
-                        </Link>
+                      ) : (
+                        <span className="text-slate-400">-</span>
                       )}
-                      {canArchive && (
-                        <button
-                          type="button"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Archivar"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (!confirm("¿Archivar este vehículo?")) return;
-                            try {
-                              await deleteVehicle(v.id);
-                              await load();
-                            } catch (e: any) {
-                              setErr(e?.message || "No se pudo archivar");
-                            }
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">archive</span>
-                        </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      {v.isPublished ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                          Sí
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                          No
+                        </span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {canEdit && (
+                          <Link
+                            href={`/inventory/${v.id}?returnTo=${encodeURIComponent(returnTo)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                          </Link>
+                        )}
+                        {canArchive && (
+                          <button
+                            type="button"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Archivar"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm("¿Archivar este vehículo?")) return;
+                              try {
+                                await deleteVehicle(v.id);
+                                await load();
+                              } catch (e: any) {
+                                setErr(e?.message || "No se pudo archivar");
+                              }
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[20px]">archive</span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {items.length === 0 && !loading && (
                 <tr>

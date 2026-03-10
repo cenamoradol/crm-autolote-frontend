@@ -226,6 +226,7 @@ export default function SaleDetailPage() {
 
   const isLocked = sale.status === 'COMPLETED';
   const permissions = user?.permissions || [];
+  const canEdit = user?.isSuperAdmin || permissions.includes("sales:update");
   const canOverride = user?.isSuperAdmin || permissions.includes("sales:override_closed");
 
   const formattedDate = new Date(sale.soldAt).toLocaleDateString([], { day: '2-digit', month: 'long', year: 'numeric' });
@@ -261,7 +262,7 @@ export default function SaleDetailPage() {
               Cerrar
             </Link>
 
-            {canOverride && !isEditing && (
+            {canEdit && (!isLocked || canOverride) && !isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="inline-flex items-center px-4 py-2 text-sm font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all uppercase tracking-widest border border-indigo-100"
@@ -382,8 +383,8 @@ export default function SaleDetailPage() {
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={savingDoc || (isLocked && !canOverride)}
-                  className={`inline-flex items-center px-4 py-2 font-bold rounded-xl transition-all text-xs uppercase tracking-widest shadow-lg ${isLocked && !canOverride
+                  disabled={savingDoc || !canEdit || (isLocked && !canOverride)}
+                  className={`inline-flex items-center px-4 py-2 font-bold rounded-xl transition-all text-xs uppercase tracking-widest shadow-lg ${!canEdit || (isLocked && !canOverride)
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                     : 'bg-slate-800 text-white hover:bg-slate-900 shadow-slate-200'
                     }`}
@@ -423,8 +424,8 @@ export default function SaleDetailPage() {
                         </a>
                         <button
                           onClick={() => handleRemoveDoc(doc.id)}
-                          disabled={isLocked && !canOverride}
-                          className={`p-2 rounded-lg transition-all ${isLocked && !canOverride
+                          disabled={!canEdit || (isLocked && !canOverride)}
+                          className={`p-2 rounded-lg transition-all ${!canEdit || (isLocked && !canOverride)
                             ? 'text-slate-200 cursor-not-allowed'
                             : 'text-slate-300 hover:text-rose-500 hover:bg-white'
                             }`}
