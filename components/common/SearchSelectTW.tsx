@@ -84,18 +84,23 @@ export default function SearchSelectTW({
                         <span className="text-sm text-gray-400">{placeholder}</span>
                     )}
                 </div>
-                <IconSearch className="w-4 h-4 text-gray-400 ml-2" />
-                {value && !disabled && (
-                    <button
-                        className="ml-2 text-gray-400 hover:text-red-500 p-1"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onChange(null);
-                        }}
-                    >
-                        ×
-                    </button>
-                )}
+                <div className="flex items-center flex-shrink-0 ml-2">
+                    <IconSearch className="w-4 h-4 text-gray-400" />
+                    {value && !disabled && (
+                        <button
+                            className="ml-1 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 flex items-center justify-center focus:outline-none"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onChange(null);
+                            }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {open && (

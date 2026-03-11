@@ -440,19 +440,21 @@ export default function VehicleCreatePage() {
             <span className="mx-2">/</span>
             <span className="text-gray-900 font-medium">Nuevo Vehículo</span>
           </div>
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isClearanceMode ? "Crear Vehículo en Remate" : "Crear Nuevo Vehículo"}
-            </h1>
-            {isClearanceMode && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
-                <span className="material-symbols-outlined text-[14px]">local_offer</span>
-                En Remate
-              </span>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isClearanceMode ? "Crear Vehículo en Remate" : "Crear Nuevo Vehículo"}
+              </h1>
+              {isClearanceMode && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                  <span className="material-symbols-outlined text-[14px]">local_offer</span>
+                  En Remate
+                </span>
+              )}
+            </div>
             <Link
               href={returnTo}
-              className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors text-sm font-medium"
+              className="inline-flex justify-center items-center w-full sm:w-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors text-sm font-medium"
             >
               <IconArrowLeft className="w-4 h-4 mr-2" />
               Volver
@@ -617,8 +619,8 @@ export default function VehicleCreatePage() {
                 <div>
                   {isClearanceMode ? (
                     <>
-                      <label className={labelClass}>
-                        <div className="flex items-center gap-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        <div className="flex items-center justify-between min-h-[24px] mb-1">
                           <span>Precio en Remate</span>
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">
                             <span className="material-symbols-outlined text-[12px]">local_offer</span>
@@ -638,8 +640,8 @@ export default function VehicleCreatePage() {
                     </>
                   ) : (
                     <>
-                      <label className={labelClass}>
-                        <div className="flex items-center gap-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        <div className="flex items-center justify-between min-h-[24px] mb-1">
                           <span>En Oferta</span>
                           <button
                             type="button"

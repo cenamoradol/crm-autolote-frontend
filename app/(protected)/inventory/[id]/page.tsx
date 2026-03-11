@@ -869,8 +869,8 @@ export default function VehicleEditPage() {
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">
                 {title || "Sin Título"}
               </h1>
@@ -879,10 +879,10 @@ export default function VehicleEditPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end">
               {/* Publicado Switch */}
               {canEdit && (
-                <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 mr-2">
+                <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
                   <span className="text-sm text-gray-600 mr-2">Publicado</span>
                   <button
                     onClick={() => !isArchived && setIsPublished(!isPublished)}
@@ -909,7 +909,7 @@ export default function VehicleEditPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving || isArchived}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
+                  className="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
                 >
                   {saving ? "Guardando..." : "Guardar Cambios"}
                 </button>
@@ -993,8 +993,8 @@ export default function VehicleEditPage() {
                 <div>
                   {vehicle?.isClearance ? (
                     <>
-                      <label className={labelClass}>
-                        <div className="flex items-center gap-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        <div className="flex items-center justify-between min-h-[24px] mb-1">
                           <span>Precio en Remate</span>
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">
                             <span className="material-symbols-outlined text-[12px]">local_offer</span>
@@ -1012,8 +1012,8 @@ export default function VehicleEditPage() {
                     </>
                   ) : (
                     <>
-                      <label className={labelClass}>
-                        <div className="flex items-center gap-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        <div className="flex items-center justify-between min-h-[24px] mb-1">
                           <span>En Oferta</span>
                           <button
                             type="button"

@@ -234,15 +234,15 @@ export function VehicleListView({
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                                <th className="px-6 py-4">Vehículo</th>
-                                <th className="px-6 py-4">Marca / Modelo</th>
-                                <th className="px-6 py-4">Año</th>
-                                <th className="px-6 py-4">Motor</th>
-                                <th className="px-6 py-4">Precio</th>
+                                <th className="px-6 py-4 min-w-[250px]">Vehículo</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Marca / Modelo</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Año</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Motor</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Precio</th>
 
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Publicado</th>
-                                <th className="px-6 py-4 text-right">Acciones</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Status</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Publicado</th>
+                                <th className="px-6 py-4 text-right whitespace-nowrap">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -256,9 +256,9 @@ export function VehicleListView({
                                         onClick={() => setSelectedVehicleId(v.id)}
                                         className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                                     >
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 min-w-[280px]">
                                             <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-2">
                                                     <span className="font-bold text-slate-900 dark:text-white text-sm">{v.title ?? "(Sin título)"}</span>
                                                     {filterMode === "clearance" ? (
                                                         v.clearancePrice && (
@@ -294,12 +294,12 @@ export function VehicleListView({
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                             {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{v.year ?? "-"}</td>
-                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">{v.year ?? "-"}</td>
+                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex flex-col">
                                                 {filterMode === "clearance" ? (
                                                     v.clearancePrice ? (
@@ -328,7 +328,7 @@ export function VehicleListView({
                                             </div>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             {v.status ? (
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[v.status] || "bg-gray-100 text-gray-800"}`}>
                                                     {v.status === 'AVAILABLE' ? 'Disponible' : v.status === 'RESERVED' ? 'Reservado' : v.status === 'SOLD' ? 'Vendido' : v.status}
@@ -337,7 +337,7 @@ export function VehicleListView({
                                                 <span className="text-slate-400">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             {v.isPublished ? (
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
                                                     Sí
@@ -348,7 +348,7 @@ export function VehicleListView({
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
                                             <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
                                                 {canEdit && (
                                                     <Link
