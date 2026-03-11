@@ -193,7 +193,8 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
         count++;
 
         // Convertir a WebP antes de subir
-        if (file.type.startsWith("image/")) {
+        const isImageOrHeic = file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
+        if (isImageOrHeic) {
           setInfo(`Preparando imagen ${count}/${total}...`);
           try {
             const originalSize = (file.size / 1024 / 1024).toFixed(2);

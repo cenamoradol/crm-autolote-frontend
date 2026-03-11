@@ -529,12 +529,14 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
         const toastId = "upload-progress";
 
         // Convert options to webp
-        if (file.type.startsWith("image/")) {
+        const isImageOrHeic = file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
+        if (isImageOrHeic) {
           toast.loading(`Preparando imagen ${count}/${total}...`, { id: toastId });
           try {
             file = await convertToWebp(file);
           } catch (err) {
             console.error("Error convirtiendo a WebP", err);
+            toast.error("Error transformando foto del iPhone", { id: toastId });
           }
         }
 
