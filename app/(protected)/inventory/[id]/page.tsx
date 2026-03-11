@@ -456,24 +456,95 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
 
   useEffect(() => { if (vehicleId) load(); }, [vehicleId]);
 
+  /** Convierte un File a WebP usando Canvas manteniendo dimensiones originales */
+  function convertToWebp(file: File, quality = 0.82): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const { width, height } = img;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error("No se pudo convertir a WebP"));
+            const baseName = file.name.replace(/\.[^.]+$/, "");
+            const webpFile = new File([blob], `${baseName}.webp`, { type: "image/webp" });
+            resolve(webpFile);
+          },
+          "image/webp",
+          quality
+        );
+      };
+      img.src = objectUrl;
+    });
+  }
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files?.length) return;
+    const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
     if (disabled) return;
+
     setUploading(true);
-    const fileCount = e.target.files.length;
-    setUploadCount(fileCount);
-    const fd = new FormData();
-    Array.from(e.target.files).forEach(f => fd.append("files", f));
-    fd.append("isCoverFirst", "false");
+    const fileArray = Array.from(rawFiles);
+    const total = fileArray.length;
+    setUploadCount(total);
+
     try {
-      await fetch(`/api/bff/vehicles/${vehicleId}/media/upload-many`, { method: "POST", body: fd });
-      toast.success(`${fileCount} foto${fileCount > 1 ? 's' : ''} subida${fileCount > 1 ? 's' : ''} exitosamente`);
+      let successCount = 0;
+      let count = 0;
+
+      for (let file of fileArray) {
+        count++;
+
+        // Toast id único para actualizar el mismo mensaje en pantalla
+        const toastId = "upload-progress";
+
+        // Convert options to webp
+        if (file.type.startsWith("image/")) {
+          toast.loading(`Preparando imagen ${count}/${total}...`, { id: toastId });
+          try {
+            file = await convertToWebp(file);
+          } catch (err) {
+            console.error("Error convirtiendo a WebP", err);
+          }
+        }
+
+        toast.loading(`Subiendo imagen ${count}/${total}...`, { id: toastId });
+
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("isCover", "false");
+        fd.append("kind", "IMAGE");
+
+        const res = await fetch(`/api/bff/vehicles/${vehicleId}/media/upload`, {
+          method: "POST",
+          body: fd,
+        });
+
+        if (res.ok) {
+          successCount++;
+        } else {
+          console.error(`Error subiendo ${file.name}`);
+        }
+      }
+
+      toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} subida${successCount > 1 ? 's' : ''} exitosamente`, { id: "upload-progress" });
       await load();
-    } catch {
-      toast.error("Error subiendo fotos");
+    } catch (err) {
+      toast.error("Error en la subida de archivos", { id: "upload-progress" });
     } finally {
       setUploading(false);
       setUploadCount(0);
+      // Limpiar input (opcional pero recomendado)
+      e.target.value = "";
     }
   }
 

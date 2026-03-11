@@ -14,7 +14,7 @@ async function forward(
   req: Request,
   pathWithSearch: string,
   accessToken?: string,
-  bodyRaw?: ArrayBuffer,
+  bodyRaw?: ArrayBuffer | ReadableStream<Uint8Array> | null,
   retry = false
 ): Promise<Response> {
   const backend = process.env.BACKEND_URL!;
@@ -44,11 +44,16 @@ async function forward(
   else outgoing.delete("x-store-id");
 
   const method = req.method.toUpperCase();
-  const init: RequestInit = {
+  const init: RequestInit & { duplex?: 'half' } = {
     method,
     headers: outgoing,
-    body: ["GET", "HEAD"].includes(method) ? undefined : bodyRaw
+    body: ["GET", "HEAD"].includes(method) ? undefined : bodyRaw,
   };
+
+  // ✅ Requerido por Node.js/undici cuando el body es un ReadableStream
+  if (bodyRaw instanceof ReadableStream) {
+    init.duplex = 'half';
+  }
 
   const res = await fetch(url, init);
 
@@ -98,9 +103,18 @@ async function handle(req: Request, pathArr: string[]): Promise<Response> {
   const path = pathArr.join("/");
   const pathWithSearch = `${path}${u.search}`;
 
-  // ✅ leer body 1 sola vez (sirve para JSON y multipart/form-data)
   const method = req.method.toUpperCase();
-  const bodyRaw = ["GET", "HEAD"].includes(method) ? undefined : await req.arrayBuffer();
+  const contentType = req.headers.get("content-type") || "";
+
+  // ✅ Si es form-data, pasamos el stream directo para no romper el boundary
+  // IMPORTANTE: Request.body solo se puede leer una vez, por lo que el retry 401 
+  // fallará para subidas de archivos, pero es un caso borde manejable.
+  const isMultipart = contentType.includes("multipart/form-data");
+
+  let bodyRaw: any;
+  if (!["GET", "HEAD"].includes(method)) {
+    bodyRaw = isMultipart ? req.body : await req.arrayBuffer();
+  }
 
   const res = await forward(req, pathWithSearch, access, bodyRaw);
 

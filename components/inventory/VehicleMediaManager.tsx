@@ -123,6 +123,37 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
     }
   }
 
+  /** Convierte un File de imagen a WebP usando Canvas manteniendo dimensiones originales */
+  function convertToWebp(file: File, quality = 0.82): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const { width, height } = img;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error("No se pudo convertir a WebP"));
+            const baseName = file.name.replace(/\.[^.]+$/, "");
+            const webpFile = new File([blob], `${baseName}.webp`, { type: "image/webp" });
+            resolve(webpFile);
+          },
+          "image/webp",
+          quality,
+        );
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
   async function uploadSelected() {
     if (!files || files.length === 0) return;
 
@@ -130,8 +161,6 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
     setErr(null);
     setInfo(null);
     setSuccess(null);
-
-    const { default: imageCompression } = await import("browser-image-compression");
 
     try {
       const fileArray = Array.from(files);
@@ -141,31 +170,25 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
       for (let file of fileArray) {
         count++;
 
-        // Comprimir si es imagen y pesa más de 1MB o simplemente para asegurar < 4MB
+        // Convertir a WebP antes de subir
         if (file.type.startsWith("image/")) {
-          setInfo(`Optimizando imagen ${count} de ${total}...`);
+          setInfo(`Preparando imagen ${count}/${total}...`);
           try {
-            const options = {
-              maxSizeMB: 1.5, // Mucho más seguro para el límite de 4.5MB de Vercel
-              maxWidthOrHeight: 1920,
-              useWebWorker: true,
-            };
-            const compressedFile = await imageCompression(file, options);
-            console.log(`Imagen optimizada: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB)`);
-
-            // Conservar el nombre original
-            file = new File([compressedFile], file.name, { type: compressedFile.type });
-          } catch (compressErr) {
-            console.error("Error comprimiendo imagen:", compressErr);
-            // Si falla la compresión, intentamos subir el original (podría fallar por tamaño)
+            const originalSize = (file.size / 1024 / 1024).toFixed(2);
+            file = await convertToWebp(file);
+            const newSize = (file.size / 1024 / 1024).toFixed(2);
+            console.log(`✅ ${file.name}: ${originalSize}MB → ${newSize}MB (WebP)`);
+          } catch (convErr) {
+            console.error("Error convirtiendo a WebP:", convErr);
+            // Si falla la conversión, subimos el original
           }
         }
 
-        setInfo(`Subiendo imagen ${count} de ${total}...`);
+        setInfo(`Subiendo imagen ${count}/${total}...`);
 
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("isCover", "false"); // No forzar portada por defecto en subidas múltiples
+        fd.append("isCover", "false");
         fd.append("kind", "IMAGE");
 
         const res = await fetch(`/api/bff/vehicles/${vehicleId}/media/upload`, {
@@ -179,12 +202,11 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
         }
       }
 
-      setSuccess(total > 1 ? "Todas las imágenes se optimizaron y subieron correctamente." : "Imagen optimizada y subida correctamente.");
+      setSuccess(total > 1 ? `${total} imágenes convertidas a WebP y subidas.` : "Imagen convertida a WebP y subida.");
       setFiles(null);
       await fetchList();
     } catch (e: any) {
       setErr(e?.message || "Error subiendo imagen(es).");
-      // Intentar recargar lo que se haya subido con éxito antes del error
       await fetchList();
     } finally {
       setUploading(false);
