@@ -457,11 +457,32 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
   useEffect(() => { if (vehicleId) load(); }, [vehicleId]);
 
   /** Convierte un File a WebP usando Canvas manteniendo dimensiones originales */
-  function convertToWebp(file: File, quality = 0.82): Promise<File> {
+  async function convertToWebp(file: File, quality = 0.82): Promise<File> {
+    let sourceFile = file;
+
+    const isHeic = file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name);
+    if (isHeic) {
+      try {
+        const heic2any = (await import("heic2any")).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.9,
+        });
+        const blobArr = Array.isArray(convertedBlob) ? convertedBlob : [convertedBlob];
+        sourceFile = new File([blobArr[0]], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
+          type: "image/jpeg",
+        });
+      } catch (err) {
+        console.error("Error convirtiendo HEIC a JPEG:", err);
+        throw new Error("No se pudo procesar la imagen HEIC del iPhone");
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      const objectUrl = URL.createObjectURL(file);
+      const objectUrl = URL.createObjectURL(sourceFile);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
         const { width, height } = img;
