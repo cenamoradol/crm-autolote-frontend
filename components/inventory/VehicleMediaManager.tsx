@@ -131,39 +131,64 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
     setInfo(null);
     setSuccess(null);
 
+    const { default: imageCompression } = await import("browser-image-compression");
+
     try {
-      const isMany = files.length > 1;
+      const fileArray = Array.from(files);
+      const total = fileArray.length;
+      let count = 0;
 
-      const fd = new FormData();
+      for (let file of fileArray) {
+        count++;
 
-      if (isMany) {
-        for (const f of Array.from(files)) fd.append("files", f);
-        fd.append("isCoverFirst", "false");
-      } else {
-        fd.append("file", files[0]);
-        fd.append("isCover", "false");
+        // Comprimir si es imagen y pesa más de 1MB o simplemente para asegurar < 4MB
+        if (file.type.startsWith("image/")) {
+          setInfo(`Optimizando imagen ${count} de ${total}...`);
+          try {
+            const options = {
+              maxSizeMB: 1.5, // Mucho más seguro para el límite de 4.5MB de Vercel
+              maxWidthOrHeight: 1920,
+              useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(file, options);
+            console.log(`Imagen optimizada: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB)`);
+
+            // Conservar el nombre original
+            file = new File([compressedFile], file.name, { type: compressedFile.type });
+          } catch (compressErr) {
+            console.error("Error comprimiendo imagen:", compressErr);
+            // Si falla la compresión, intentamos subir el original (podría fallar por tamaño)
+          }
+        }
+
+        setInfo(`Subiendo imagen ${count} de ${total}...`);
+
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("isCover", "false"); // No forzar portada por defecto en subidas múltiples
         fd.append("kind", "IMAGE");
+
+        const res = await fetch(`/api/bff/vehicles/${vehicleId}/media/upload`, {
+          method: "POST",
+          body: fd,
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(`Error subiendo "${file.name}". (${res.status}) ${t}`);
+        }
       }
 
-      const res = await fetch(
-        isMany
-          ? `/api/bff/vehicles/${vehicleId}/media/upload-many`
-          : `/api/bff/vehicles/${vehicleId}/media/upload`,
-        { method: "POST", body: fd }
-      );
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`No se pudo subir archivo(s). (${res.status}) ${t}`);
-      }
-
-      setSuccess(isMany ? "Imágenes subidas correctamente." : "Imagen subida correctamente.");
+      setSuccess(total > 1 ? "Todas las imágenes se optimizaron y subieron correctamente." : "Imagen optimizada y subida correctamente.");
       setFiles(null);
       await fetchList();
     } catch (e: any) {
       setErr(e?.message || "Error subiendo imagen(es).");
+      // Intentar recargar lo que se haya subido con éxito antes del error
+      await fetchList();
     } finally {
       setUploading(false);
+      setInfo(null);
     }
   }
 
