@@ -399,9 +399,9 @@ function SortableMediaItem({ m, handleDelete, handleSetCover, reordering, disabl
         )}
       </div>
 
-      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all pointer-events-none" />
+      <div className="absolute inset-0 bg-black opacity-20 transition-all pointer-events-none" />
 
-      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-1 right-1 flex gap-1 opacity-100 transition-opacity">
         {!disabled && !m.isCover && (
           <button
             className="bg-yellow-400/90 text-yellow-900 p-1.5 rounded-full hover:bg-yellow-500 shadow-sm pointer-events-auto backdrop-blur-sm"
@@ -439,6 +439,7 @@ function SortableMediaItem({ m, handleDelete, handleSetCover, reordering, disabl
 function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?: boolean }) {
   const [media, setMedia] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
   const [reordering, setReordering] = useState(false);
 
   const sensors = useSensors(
@@ -458,17 +459,21 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.length) return;
     if (disabled) return;
+    setUploading(true);
+    const fileCount = e.target.files.length;
+    setUploadCount(fileCount);
     const fd = new FormData();
     Array.from(e.target.files).forEach(f => fd.append("files", f));
     fd.append("isCoverFirst", "false");
     try {
       await fetch(`/api/bff/vehicles/${vehicleId}/media/upload-many`, { method: "POST", body: fd });
-      toast.success("Fotos subidas exitosamente");
+      toast.success(`${fileCount} foto${fileCount > 1 ? 's' : ''} subida${fileCount > 1 ? 's' : ''} exitosamente`);
       await load();
     } catch {
       toast.error("Error subiendo fotos");
     } finally {
       setUploading(false);
+      setUploadCount(0);
     }
   }
 
@@ -527,20 +532,33 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SortableContext items={media.map(m => m.id)} strategy={rectSortingStrategy}>
-            {media.map((m) => (
-              <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} handleSetCover={handleSetCover} reordering={reordering} disabled={disabled} />
-            ))}
-          </SortableContext>
-
-          <label className={`border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 transition-colors aspect-square ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer hover:border-blue-500 hover:bg-blue-50"}`}>
-            <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading || disabled} />
-            <div className="bg-gray-100 p-3 rounded-full mb-2">
-              <IconUpload className="w-6 h-6 text-gray-500" />
+        <div className="relative">
+          {uploading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-40 rounded-lg flex flex-col items-center justify-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-700">Subiendo {uploadCount} {uploadCount === 1 ? 'imagen' : 'imágenes'}...</p>
+                <p className="text-xs text-slate-400 mt-0.5">Esto puede tomar unos segundos</p>
+              </div>
             </div>
-            <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">{uploading ? "Subiendo..." : "Subir Media"}</span>
-          </label>
+          )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <SortableContext items={media.map(m => m.id)} strategy={rectSortingStrategy}>
+              {media.map((m) => (
+                <SortableMediaItem key={m.id} m={m} handleDelete={handleDelete} handleSetCover={handleSetCover} reordering={reordering} disabled={disabled} />
+              ))}
+            </SortableContext>
+
+            <label className={`border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 transition-colors aspect-square ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer hover:border-blue-500 hover:bg-blue-50"}`}>
+              <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading || disabled} />
+              <div className="bg-gray-100 p-3 rounded-full mb-2">
+                <IconUpload className="w-6 h-6 text-gray-500" />
+              </div>
+              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">{uploading ? "Subiendo..." : "Subir Media"}</span>
+            </label>
+          </div>
         </div>
       </DndContext>
     </div>
