@@ -597,6 +597,7 @@ export default function VehicleEditPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [isOffer, setIsOffer] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
+  const [clearancePrice, setClearancePrice] = useState("");
   const [plate, setPlate] = useState("");
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
   const [engineSizeError, setEngineSizeError] = useState<string | null>(null);
@@ -652,6 +653,7 @@ export default function VehicleEditPage() {
           setVehicleTypeId(v.vehicleTypeId || "");
           setPlate(v.plate || "");
           setOfferPrice(v.offerPrice ? String(v.offerPrice) : "");
+          setClearancePrice(v.clearancePrice ? String(v.clearancePrice) : "");
           setIsOffer(!!v.offerPrice);
           setIsPublished(!!v.isPublished);
 
@@ -710,7 +712,12 @@ export default function VehicleEditPage() {
         transmission: toStringOrUndefined(transmission),
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
-        offerPrice: isOffer ? toStringOrUndefined(offerPrice) : (offerPrice === "" ? null : undefined),
+        offerPrice: vehicle?.isClearance
+          ? undefined
+          : (isOffer ? toStringOrUndefined(offerPrice) : (offerPrice === "" ? null : undefined)),
+        clearancePrice: vehicle?.isClearance
+          ? (toStringOrUndefined(clearancePrice) ?? null)
+          : undefined,
         plate: toStringOrUndefined(plate),
         vehicleTypeId: vehicleTypeId || undefined,
         purchasePrice: toStringOrUndefined(purchasePrice),
@@ -913,26 +920,49 @@ export default function VehicleEditPage() {
                   <input className={inputClass} value={price} onChange={e => setPrice(e.target.value)} disabled={isArchived || !canEdit} />
                 </div>
                 <div>
-                  <label className={labelClass}>
-                    <div className="flex items-center gap-2">
-                      <span>En Oferta</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsOffer(!isOffer)}
+                  {vehicle?.isClearance ? (
+                    <>
+                      <label className={labelClass}>
+                        <div className="flex items-center gap-2">
+                          <span>Precio en Remate</span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="material-symbols-outlined text-[12px]">local_offer</span>
+                            Remate
+                          </span>
+                        </div>
+                      </label>
+                      <input
+                        className={inputClass}
                         disabled={isArchived || !canEdit}
-                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'} ${(isArchived || !canEdit) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                  </label>
-                  <input
-                    className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
-                    disabled={!isOffer || isArchived || !canEdit}
-                    value={offerPrice}
-                    onChange={e => setOfferPrice(e.target.value)}
-                    placeholder="Precio oferta"
-                  />
+                        value={clearancePrice}
+                        onChange={e => setClearancePrice(e.target.value)}
+                        placeholder="Precio de remate"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label className={labelClass}>
+                        <div className="flex items-center gap-2">
+                          <span>En Oferta</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsOffer(!isOffer)}
+                            disabled={isArchived || !canEdit}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'} ${(isArchived || !canEdit) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                      </label>
+                      <input
+                        className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
+                        disabled={!isOffer || isArchived || !canEdit}
+                        value={offerPrice}
+                        onChange={e => setOfferPrice(e.target.value)}
+                        placeholder="Precio oferta"
+                      />
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>Kilometraje</label>

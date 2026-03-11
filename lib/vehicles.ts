@@ -22,6 +22,7 @@ export type VehicleUpsertPayload = {
   fuelType?: string;
   engineSize?: number;
   offerPrice?: string | number | null;
+  clearancePrice?: string | number | null;
   plate?: string;
 
   purchasePrice?: string | number | null;
@@ -30,6 +31,7 @@ export type VehicleUpsertPayload = {
   otherCosts?: string | number | null;
 
   isPublished?: boolean;
+  isClearance?: boolean;
   consignorId?: string;
 };
 
@@ -53,6 +55,7 @@ export type Vehicle = {
 
   status: VehicleStatus;
   isPublished: boolean;
+  isClearance: boolean;
 
   brandId: string;
   modelId: string;
@@ -71,6 +74,7 @@ export type Vehicle = {
   fuelType?: string | null;
   engineSize?: number | null;
   offerPrice?: string | number | null;
+  clearancePrice?: string | number | null;
   plate?: string | null;
 
   purchasePrice?: number | string | null;
@@ -106,11 +110,12 @@ function buildQuery(params: Record<string, any>) {
 }
 
 /** LIST */
-export async function listVehicles(opts?: { status?: VehicleStatus; published?: boolean; search?: string }) {
+export async function listVehicles(opts?: { status?: VehicleStatus; published?: boolean; search?: string; clearance?: boolean }) {
   const q = buildQuery({
     status: opts?.status,
     published: typeof opts?.published === "boolean" ? String(opts.published) : undefined,
     search: opts?.search,
+    clearance: typeof opts?.clearance === "boolean" ? String(opts.clearance) : undefined,
   });
   return apiFetch<Vehicle[]>(`/vehicles${q}`, { method: "GET" });
 }
@@ -138,12 +143,14 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
     offerPrice: payload.offerPrice ?? undefined,
+    clearancePrice: payload.clearancePrice ?? undefined,
     plate: payload.plate ?? undefined,
     purchasePrice: payload.purchasePrice ?? undefined,
     repairCosts: payload.repairCosts ?? undefined,
     paperworkCosts: payload.paperworkCosts ?? undefined,
     otherCosts: payload.otherCosts ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
+    isClearance: typeof payload.isClearance === "boolean" ? payload.isClearance : undefined,
     consignorId: payload.consignorId ?? undefined,
   };
 
@@ -171,6 +178,7 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     fuelType: payload.fuelType ?? undefined,
     engineSize: payload.engineSize ?? undefined,
     offerPrice: payload.offerPrice ?? undefined,
+    clearancePrice: payload.clearancePrice ?? undefined,
     plate: payload.plate ?? undefined,
     purchasePrice: payload.purchasePrice ?? undefined,
     repairCosts: payload.repairCosts ?? undefined,

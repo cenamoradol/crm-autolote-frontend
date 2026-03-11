@@ -246,6 +246,7 @@ function IconDollarSign({ className }: { className?: string }) {
 export default function VehicleCreatePage() {
   const sp = useSearchParams();
   const returnTo = useMemo(() => safeDecode(sp.get("returnTo")) ?? "/inventory", [sp]);
+  const isClearanceMode = sp.get("clearance") === "true";
 
   // --- Global Component State ---
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
@@ -279,6 +280,7 @@ export default function VehicleCreatePage() {
   const [isPublished, setIsPublished] = useState(false);
   const [isOffer, setIsOffer] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
+  const [clearancePrice, setClearancePrice] = useState("");
   const [plate, setPlate] = useState("");
   const [consignor, setConsignor] = useState<{ value: string; label: string; sublabel?: string } | null>(null);
 
@@ -393,19 +395,22 @@ export default function VehicleCreatePage() {
         fuelType: toStringOrUndefined(fuelType),
         engineSize: toFloatOrUndefined(engineSize),
         price: toPriceOrUndefined(price),
-        offerPrice: isOffer ? toPriceOrUndefined(offerPrice) : undefined,
+        offerPrice: !isClearanceMode && isOffer ? toPriceOrUndefined(offerPrice) : undefined,
+        clearancePrice: isClearanceMode ? toPriceOrUndefined(clearancePrice) : undefined,
         plate: toStringOrUndefined(plate),
         purchasePrice: toPriceOrUndefined(purchasePrice),
         repairCosts: toPriceOrUndefined(repairCosts),
         paperworkCosts: toPriceOrUndefined(paperworkCosts),
         otherCosts: toPriceOrUndefined(otherCosts),
         isPublished,
+        isClearance: isClearanceMode,
         consignorId: consignor?.value || undefined
       };
 
       const created = await createVehicle(payload);
-      // Redirect
-      window.location.href = `/inventory/${created.id}?returnTo=${encodeURIComponent(returnTo)}`;
+      // Redirect back to the appropriate page
+      const redirectBase = isClearanceMode ? `/inventory/${created.id}?returnTo=${encodeURIComponent('/remates')}` : `/inventory/${created.id}?returnTo=${encodeURIComponent(returnTo)}`;
+      window.location.href = redirectBase;
     } catch (e: any) {
       setError(e?.message ?? "Error guardando vehículo.");
       setSaving(false);
@@ -436,7 +441,15 @@ export default function VehicleCreatePage() {
             <span className="text-gray-900 font-medium">Nuevo Vehículo</span>
           </div>
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Crear Nuevo Vehículo</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isClearanceMode ? "Crear Vehículo en Remate" : "Crear Nuevo Vehículo"}
+            </h1>
+            {isClearanceMode && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                <span className="material-symbols-outlined text-[14px]">local_offer</span>
+                En Remate
+              </span>
+            )}
             <Link
               href={returnTo}
               className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors text-sm font-medium"
@@ -602,28 +615,53 @@ export default function VehicleCreatePage() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>
-                    <div className="flex items-center gap-2">
-                      <span>En Oferta</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsOffer(!isOffer)}
-                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'}`}
-                      >
-                        <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      disabled={!isOffer}
-                      className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
-                      placeholder="Precio oferta"
-                      value={offerPrice}
-                      onChange={e => setOfferPrice(e.target.value)}
-                    />
-                  </div>
+                  {isClearanceMode ? (
+                    <>
+                      <label className={labelClass}>
+                        <div className="flex items-center gap-2">
+                          <span>Precio en Remate</span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="material-symbols-outlined text-[12px]">local_offer</span>
+                            Remate
+                          </span>
+                        </div>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className={inputClass}
+                          placeholder="Precio de remate"
+                          value={clearancePrice}
+                          onChange={e => setClearancePrice(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label className={labelClass}>
+                        <div className="flex items-center gap-2">
+                          <span>En Oferta</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsOffer(!isOffer)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOffer ? 'bg-orange-500' : 'bg-gray-200'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOffer ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          disabled={!isOffer}
+                          className={`${inputClass} disabled:bg-gray-50 disabled:text-gray-400`}
+                          placeholder="Precio oferta"
+                          value={offerPrice}
+                          onChange={e => setOfferPrice(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
