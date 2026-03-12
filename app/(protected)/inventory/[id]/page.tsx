@@ -460,11 +460,16 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
   async function convertToWebp(file: File, quality = 0.82): Promise<File> {
     let sourceFile = file;
 
-    const isHeic = file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name);
+    // Skip heic2any if the browser already identified it as a JPEG/PNG despite the extension
+    const isHeic = (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) &&
+                   file.type !== "image/jpeg" && file.type !== "image/png";
+
     if (isHeic) {
       try {
-        const heic2any = (await import("heic2any")).default;
-        const convertedBlob = await heic2any({
+        const heic2anyModule = await import("heic2any");
+        const heic2any = heic2anyModule.default || heic2anyModule;
+        
+        const convertedBlob = await (heic2any as any)({
           blob: file,
           toType: "image/jpeg",
           quality: 0.9,
@@ -474,8 +479,9 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
           type: "image/jpeg",
         });
       } catch (err) {
-        console.error("Error convirtiendo HEIC a JPEG:", err);
-        throw new Error("No se pudo procesar la imagen HEIC del iPhone");
+        console.warn("⚠️ heic2any falló (quizás iOS ya lo convirtió o Safari lo soporta nativamente). Excepción:", err);
+        // No lanzamos error. Dejamos que el flujo continúe e intente pintarlo nativamente en el Canvas.
+        sourceFile = file; 
       }
     }
 
@@ -530,13 +536,15 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
 
         // Convert options to webp
         const isImageOrHeic = file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
+
         if (isImageOrHeic) {
           toast.loading(`Preparando imagen ${count}/${total}...`, { id: toastId });
           try {
             file = await convertToWebp(file);
-          } catch (err) {
-            console.error("Error convirtiendo a WebP", err);
-            toast.error("Error transformando foto del iPhone", { id: toastId });
+          } catch (err: any) {
+            console.error("Error en convertToWebp:", err);
+            toast.error(`Error procesando foto ${count}`, { id: toastId });
+            continue;
           }
         }
 

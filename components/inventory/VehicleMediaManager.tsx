@@ -127,12 +127,16 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
   async function convertToWebp(file: File, quality = 0.82): Promise<File> {
     let sourceFile = file;
 
-    // Detectar HEIC/HEIF (iPhone) y pre-convertir a JPEG
-    const isHeic = file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name);
+    // Skip heic2any if the browser already identified it as a JPEG/PNG despite the extension
+    const isHeic = (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) &&
+                   file.type !== "image/jpeg" && file.type !== "image/png";
+
     if (isHeic) {
       try {
-        const heic2any = (await import("heic2any")).default;
-        const convertedBlob = await heic2any({
+        const heic2anyModule = await import("heic2any");
+        const heic2any = heic2anyModule.default || heic2anyModule;
+
+        const convertedBlob = await (heic2any as any)({
           blob: file,
           toType: "image/jpeg",
           quality: 0.9,
@@ -142,8 +146,8 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
           type: "image/jpeg",
         });
       } catch (err) {
-        console.error("Error convirtiendo HEIC a JPEG:", err);
-        throw new Error("No se pudo procesar la imagen HEIC del iPhone");
+        console.warn("⚠️ heic2any falló en Gestor Multimedia. Usando Canvas Nativo asumiendo que iOS lo soporta. Excepción:", err);
+        sourceFile = file;
       }
     }
 
