@@ -125,36 +125,10 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
 
   /** Convierte un File de imagen a WebP usando Canvas manteniendo dimensiones originales */
   async function convertToWebp(file: File, quality = 0.82): Promise<File> {
-    let sourceFile = file;
-
-    // Skip heic2any if the browser already identified it as a JPEG/PNG despite the extension
-    const isHeic = (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) &&
-                   file.type !== "image/jpeg" && file.type !== "image/png";
-
-    if (isHeic) {
-      try {
-        const heic2anyModule = await import("heic2any");
-        const heic2any = heic2anyModule.default || heic2anyModule;
-
-        const convertedBlob = await (heic2any as any)({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.9,
-        });
-        const blobArr = Array.isArray(convertedBlob) ? convertedBlob : [convertedBlob];
-        sourceFile = new File([blobArr[0]], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
-          type: "image/jpeg",
-        });
-      } catch (err) {
-        console.warn("⚠️ heic2any falló en Gestor Multimedia. Usando Canvas Nativo asumiendo que iOS lo soporta. Excepción:", err);
-        sourceFile = file;
-      }
-    }
-
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      const objectUrl = URL.createObjectURL(sourceFile);
+      const objectUrl = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
         const { width, height } = img;
@@ -197,8 +171,8 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
         count++;
 
         // Convertir a WebP antes de subir
-        const isImageOrHeic = file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
-        if (isImageOrHeic) {
+        const isImage = file.type.startsWith("image/");
+        if (isImage) {
           setInfo(`Preparando imagen ${count}/${total}...`);
           try {
             const originalSize = (file.size / 1024 / 1024).toFixed(2);
@@ -253,7 +227,7 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
           </div>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            <input type="file" accept="image/*" multiple onChange={(e) => setFiles(e.target.files)} />
+            <input type="file" accept="image/jpeg, image/png, image/webp" multiple onChange={(e) => setFiles(e.target.files)} />
 
             <LoadingButton
               loading={uploading}

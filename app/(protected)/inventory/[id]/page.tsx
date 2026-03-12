@@ -458,37 +458,10 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
 
   /** Convierte un File a WebP usando Canvas manteniendo dimensiones originales */
   async function convertToWebp(file: File, quality = 0.82): Promise<File> {
-    let sourceFile = file;
-
-    // Skip heic2any if the browser already identified it as a JPEG/PNG despite the extension
-    const isHeic = (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name)) &&
-                   file.type !== "image/jpeg" && file.type !== "image/png";
-
-    if (isHeic) {
-      try {
-        const heic2anyModule = await import("heic2any");
-        const heic2any = heic2anyModule.default || heic2anyModule;
-        
-        const convertedBlob = await (heic2any as any)({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.9,
-        });
-        const blobArr = Array.isArray(convertedBlob) ? convertedBlob : [convertedBlob];
-        sourceFile = new File([blobArr[0]], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
-          type: "image/jpeg",
-        });
-      } catch (err) {
-        console.warn("⚠️ heic2any falló (quizás iOS ya lo convirtió o Safari lo soporta nativamente). Excepción:", err);
-        // No lanzamos error. Dejamos que el flujo continúe e intente pintarlo nativamente en el Canvas.
-        sourceFile = file; 
-      }
-    }
-
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      const objectUrl = URL.createObjectURL(sourceFile);
+      const objectUrl = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
         const { width, height } = img;
@@ -535,9 +508,9 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
         const toastId = "upload-progress";
 
         // Convert options to webp
-        const isImageOrHeic = file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
+        const isImage = file.type.startsWith("image/");
 
-        if (isImageOrHeic) {
+        if (isImage) {
           toast.loading(`Preparando imagen ${count}/${total}...`, { id: toastId });
           try {
             file = await convertToWebp(file);
@@ -654,7 +627,7 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
             </SortableContext>
 
             <label className={`border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-4 transition-colors aspect-square ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "cursor-pointer hover:border-blue-500 hover:bg-blue-50"}`}>
-              <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading || disabled} />
+              <input type="file" multiple accept="image/jpeg, image/png, image/webp, video/mp4, video/quicktime" className="hidden" onChange={handleUpload} disabled={uploading || disabled} />
               <div className="bg-gray-100 p-3 rounded-full mb-2">
                 <IconUpload className="w-6 h-6 text-gray-500" />
               </div>
