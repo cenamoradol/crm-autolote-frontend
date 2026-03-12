@@ -504,6 +504,8 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
       for (let file of fileArray) {
         count++;
 
+        alert(`F2: ${file.name} | T: ${file.type || 'VACIO'} | S: ${(file.size/1024/1024).toFixed(2)}MB`);
+
         // Toast id único para actualizar el mismo mensaje en pantalla
         const toastId = "upload-progress";
 
@@ -536,14 +538,20 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
         if (res.ok) {
           successCount++;
         } else {
-          console.error(`Error subiendo ${file.name}`);
+          const t = await res.text().catch(() => "");
+          const errMsg = `Fallo Backend (${file.name}): ${res.status} - ${t.substring(0, 100)}`;
+          alert(errMsg);
+          console.error(errMsg);
+          throw new Error(errMsg);
         }
       }
 
       toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} subida${successCount > 1 ? 's' : ''} exitosamente`, { id: "upload-progress" });
       await load();
-    } catch (err) {
-      toast.error("Error en la subida de archivos", { id: "upload-progress" });
+    } catch (err: any) {
+      const errTxt = err instanceof Error ? err.message : String(err);
+      alert(`Catch F2: ${errTxt}`);
+      toast.error(`Error en la subida: ${errTxt.substring(0, 50)}`, { id: "upload-progress" });
     } finally {
       setUploading(false);
       setUploadCount(0);

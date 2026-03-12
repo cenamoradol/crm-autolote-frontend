@@ -170,6 +170,9 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
       for (let file of fileArray) {
         count++;
 
+        // Debug literal para ver qué nos mandó el iPhone
+        alert(`F1: ${file.name} | T: ${file.type || 'VACIO'} | S: ${(file.size/1024/1024).toFixed(2)}MB`);
+
         // Convertir a WebP antes de subir
         const isImage = file.type.startsWith("image/");
         if (isImage) {
@@ -199,7 +202,9 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
 
         if (!res.ok) {
           const t = await res.text().catch(() => "");
-          throw new Error(`Error subiendo "${file.name}". (${res.status}) ${t}`);
+          const errMsg = `Fallo Backend (${res.status}): ${t.substring(0, 100)}`;
+          alert(errMsg);
+          throw new Error(errMsg);
         }
       }
 
@@ -207,7 +212,9 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
       setFiles(null);
       await fetchList();
     } catch (e: any) {
-      setErr(e?.message || "Error subiendo imagen(es).");
+      const errTxt = e?.message || "Error subiendo imagen(es).";
+      alert(`Catch Error: ${errTxt}`);
+      setErr(errTxt);
       await fetchList();
     } finally {
       setUploading(false);
