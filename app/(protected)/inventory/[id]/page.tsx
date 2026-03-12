@@ -456,32 +456,51 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
 
   useEffect(() => { if (vehicleId) load(); }, [vehicleId]);
 
-  /** Convierte un File a WebP usando Canvas manteniendo dimensiones originales */
-  async function convertToWebp(file: File, quality = 0.82): Promise<File> {
+  /** Convierte un File a WebP usando Canvas manteniendo dimensiones originales (con salvaguarda de tamaño Vercel) */
+  async function convertToWebp(file: File): Promise<File> {
+    const tryConvert = (img: HTMLImageElement, scale: number, quality: number): Promise<Blob> => {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Error al procesar Canvas WebP"));
+        }, "image/webp", quality);
+      });
+    };
+
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onerror = () => reject(new Error("No se pudo leer la imagen"));
       const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
+      img.onload = async () => {
         URL.revokeObjectURL(objectUrl);
-        const { width, height } = img;
+        try {
+          let quality = 0.85;
+          let scale = 1.0;
+          let blob = await tryConvert(img, scale, quality);
 
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, width, height);
+          // Límite conservador de 3.8MB para esquivar el límite de Vercel de 4.5MB
+          while (blob.size > 3.8 * 1024 * 1024) {
+            console.warn(`[WebP] Tamaño ${blob.size / 1024 / 1024}MB excede límite. Ajustando...`);
+            if (quality > 0.5) {
+              quality -= 0.15; // Bajar compresión a 70%, luego 55%
+            } else {
+              scale *= 0.8; // Último recurso: Bajar tamaño un 20% (ej. fotos de 48 Megapixeles)
+            }
+            blob = await tryConvert(img, scale, quality);
+            
+            if (scale < 0.2) break; // Seguro contra bucle infinito
+          }
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error("No se pudo convertir a WebP"));
-            const baseName = file.name.replace(/\.[^.]+$/, "");
-            const webpFile = new File([blob], `${baseName}.webp`, { type: "image/webp" });
-            resolve(webpFile);
-          },
-          "image/webp",
-          quality
-        );
+          const baseName = file.name.replace(/\.[^.]+$/, "");
+          resolve(new File([blob], `${baseName}.webp`, { type: "image/webp" }));
+        } catch (e) {
+          reject(e);
+        }
       };
       img.src = objectUrl;
     });
@@ -503,8 +522,6 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
 
       for (let file of fileArray) {
         count++;
-
-        alert(`F2: ${file.name} | T: ${file.type || 'VACIO'} | S: ${(file.size/1024/1024).toFixed(2)}MB`);
 
         // Toast id único para actualizar el mismo mensaje en pantalla
         const toastId = "upload-progress";
@@ -539,19 +556,17 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
           successCount++;
         } else {
           const t = await res.text().catch(() => "");
-          const errMsg = `Fallo Backend (${file.name}): ${res.status} - ${t.substring(0, 100)}`;
-          alert(errMsg);
-          console.error(errMsg);
-          throw new Error(errMsg);
+          const errMsg = `Fallo Backend (${res.status}): ${t.substring(0, 50)}`;
+          toast.error(errMsg, { id: toastId });
+          console.error(`Error subiendo ${file.name}: ${errMsg}`);
+          successCount--; // Cancelamos esta
         }
       }
 
-      toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} subida${successCount > 1 ? 's' : ''} exitosamente`, { id: "upload-progress" });
+      toast.success(`${successCount} foto${successCount !== 1 ? 's' : ''} subida${successCount !== 1 ? 's' : ''} exitosamente`, { id: "upload-progress" });
       await load();
     } catch (err: any) {
-      const errTxt = err instanceof Error ? err.message : String(err);
-      alert(`Catch F2: ${errTxt}`);
-      toast.error(`Error en la subida: ${errTxt.substring(0, 50)}`, { id: "upload-progress" });
+      toast.error(`Error en la subida: ${err.message?.substring(0, 50)}`, { id: "upload-progress" });
     } finally {
       setUploading(false);
       setUploadCount(0);

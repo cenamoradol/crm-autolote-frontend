@@ -123,34 +123,53 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
     }
   }
 
-  /** Convierte un File de imagen a WebP usando Canvas manteniendo dimensiones originales */
-  async function convertToWebp(file: File, quality = 0.82): Promise<File> {
+  /** Convierte un File de imagen a WebP usando Canvas manteniendo dimensiones originales (con salvaguarda de tamaño Vercel) */
+  async function convertToWebp(file: File): Promise<File> {
+    const tryConvert = (img: HTMLImageElement, scale: number, quality: number): Promise<Blob> => {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Error al procesar Canvas WebP"));
+        }, "image/webp", quality);
+      });
+    };
+
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onerror = () => reject(new Error("No se pudo leer la imagen"));
       const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
+      img.onload = async () => {
         URL.revokeObjectURL(objectUrl);
-        const { width, height } = img;
+        try {
+          let quality = 0.85;
+          let scale = 1.0;
+          let blob = await tryConvert(img, scale, quality);
 
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0, width, height);
+          // Límite conservador de 3.8MB para esquivar el límite de Vercel de 4.5MB
+          while (blob.size > 3.8 * 1024 * 1024) {
+            console.warn(`[WebP] Tamaño ${blob.size / 1024 / 1024}MB excede límite. Ajustando...`);
+            if (quality > 0.5) {
+              quality -= 0.15; // Bajar compresión a 70%, luego 55%
+            } else {
+              scale *= 0.8; // Último recurso: Bajar tamaño un 20% (ej. fotos de 48 Megapixeles)
+            }
+            blob = await tryConvert(img, scale, quality);
+            
+            if (scale < 0.2) break; // Seguro contra bucle infinito
+          }
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error("No se pudo convertir a WebP"));
-            const baseName = file.name.replace(/\.[^.]+$/, "");
-            const webpFile = new File([blob], `${baseName}.webp`, { type: "image/webp" });
-            resolve(webpFile);
-          },
-          "image/webp",
-          quality,
-        );
+          const baseName = file.name.replace(/\.[^.]+$/, "");
+          resolve(new File([blob], `${baseName}.webp`, { type: "image/webp" }));
+        } catch (e) {
+          reject(e);
+        }
       };
-      img.src = objectUrl; // Use objectUrl explicitly here as well, wait, originally it was img.src = URL.createObjectURL(file); I fixed it to use objectUrl.
+      img.src = objectUrl;
     });
   }
 
@@ -169,9 +188,6 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
 
       for (let file of fileArray) {
         count++;
-
-        // Debug literal para ver qué nos mandó el iPhone
-        alert(`F1: ${file.name} | T: ${file.type || 'VACIO'} | S: ${(file.size/1024/1024).toFixed(2)}MB`);
 
         // Convertir a WebP antes de subir
         const isImage = file.type.startsWith("image/");
@@ -202,9 +218,7 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
 
         if (!res.ok) {
           const t = await res.text().catch(() => "");
-          const errMsg = `Fallo Backend (${res.status}): ${t.substring(0, 100)}`;
-          alert(errMsg);
-          throw new Error(errMsg);
+          throw new Error(`Error subiendo "${file.name}". (${res.status}) ${t.substring(0, 100)}`);
         }
       }
 
@@ -212,9 +226,7 @@ export default function VehicleMediaManager({ vehicleId }: { vehicleId: string }
       setFiles(null);
       await fetchList();
     } catch (e: any) {
-      const errTxt = e?.message || "Error subiendo imagen(es).";
-      alert(`Catch Error: ${errTxt}`);
-      setErr(errTxt);
+      setErr(e?.message || "Error subiendo imagen(es).");
       await fetchList();
     } finally {
       setUploading(false);
