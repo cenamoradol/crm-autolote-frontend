@@ -143,6 +143,17 @@ export function SidebarNavigation({ isOpen, onClose, session, supportStoreId }: 
                     </Link>
 
                     <Link
+                        href="/events"
+                        onClick={onClose}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname.startsWith("/events")
+                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                            : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                            }`}
+                    >
+                        <span className="material-symbols-outlined text-[20px]">event</span>
+                        Eventos
+                    </Link>
+                    <Link
                         href="/remates"
                         onClick={onClose}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname.startsWith("/remates")
