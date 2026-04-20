@@ -8,6 +8,9 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 type VehicleType = {
     id: string;
     name: string;
+    _count?: {
+        vehicles: number;
+    };
 };
 
 export default function VehicleTypesPage() {
@@ -210,7 +213,14 @@ export default function VehicleTypesPage() {
                                             </button>
                                         </div>
                                     ) : (
-                                        <span className="text-sm font-medium text-slate-900 dark:text-slate-200 uppercase tracking-tight">{t.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium text-slate-900 dark:text-slate-200 uppercase tracking-tight">{t.name}</span>
+                                            {t._count && (
+                                                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                                    {t._count.vehicles} {t._count.vehicles === 1 ? 'VEHÍCULO' : 'VEHÍCULOS'}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
 
                                     {!editingId && (

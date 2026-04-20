@@ -1,9 +1,11 @@
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const isFormData = init?.body instanceof FormData;
+
   const res = await fetch(`/api/bff${path.startsWith("/") ? path : `/${path}`}`, {
     ...init,
     headers: {
       ...(init?.headers || {}),
-      "Content-Type": "application/json"
+      ...(isFormData ? {} : { "Content-Type": "application/json" })
     }
   });
 

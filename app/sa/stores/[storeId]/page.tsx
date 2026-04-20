@@ -15,7 +15,7 @@ type StoreDetail = {
   currency: string;
   currencySymbol: string;
   domains?: { id: string; domain: string; isPrimary: boolean }[];
-  branches?: { id: string; name: string; address: string | null; isPrimary: boolean }[];
+  branches?: { id: string; name: string; address: string | null; isPrimary: boolean; _count?: { vehicles: number } }[];
   members?: {
     userId: string;
     email: string;
@@ -490,6 +490,11 @@ export default function StoreDetailPage({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-tight">{b.name}</span>
+                        {b._count && (
+                          <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                            {b._count.vehicles} {b._count.vehicles === 1 ? 'VEHÍCULO' : 'VEHÍCULOS'}
+                          </span>
+                        )}
                         {b.isPrimary && (
                           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/20">
                             Principal
