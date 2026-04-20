@@ -31,10 +31,24 @@ export default function VehicleTypesPage() {
     // Delete mode
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    async function load() {
+    // Store filter
+    const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+    const [selectedStoreId, setSelectedStoreId] = useState<string>("");
+
+    async function loadStores() {
+        try {
+            const data = await apiFetch<any[]>("/sa/stores");
+            setStores(data);
+        } catch (e: any) {
+            console.error("Error al cargar tiendas:", e);
+        }
+    }
+
+    async function load(storeId?: string) {
         setLoading(true);
         try {
-            const data = await apiFetch<VehicleType[]>("/vehicle-types");
+            const query = storeId ? `?storeId=${storeId}` : "";
+            const data = await apiFetch<VehicleType[]>(`/vehicle-types${query}`);
             setTypes(data);
         } catch (e: any) {
             setError(e.message || "Error al cargar tipos de vehículo");
@@ -44,8 +58,12 @@ export default function VehicleTypesPage() {
     }
 
     useEffect(() => {
-        load();
+        loadStores();
     }, []);
+
+    useEffect(() => {
+        load(selectedStoreId);
+    }, [selectedStoreId]);
 
     async function onCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -166,14 +184,31 @@ export default function VehicleTypesPage() {
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Tipos de Vehículo</h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Catálogo para clasificación.</p>
                             </div>
-                            <button
-                                onClick={load}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`h-5 w-5 ${loading ? "animate-spin" : ""}`}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                </svg>
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:block">Filtrar por Tienda:</label>
+                                    <select
+                                        value={selectedStoreId}
+                                        onChange={(e) => setSelectedStoreId(e.target.value)}
+                                        className="text-xs font-semibold rounded-lg border-slate-200 bg-slate-50 py-1 pl-2 pr-8 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition-all"
+                                    >
+                                        <option value="">TOTAL GLOBAL</option>
+                                        {stores.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={() => load(selectedStoreId)}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                    title="Refrescar"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`h-5 w-5 ${loading ? "animate-spin" : ""}`}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         {error && (
