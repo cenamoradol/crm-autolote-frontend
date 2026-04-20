@@ -212,3 +212,16 @@ export async function searchModels(brandId: string, q: string): Promise<SearchOp
       .filter(Boolean) as SearchOption[];
   }
 }
+// ---------------- Vehicle Types ----------------
+export async function searchVehicleTypes(): Promise<SearchOption[]> {
+  const raw = await apiFetch<any>(`/vehicle-types`);
+  const arr = extractArray(raw);
+
+  return arr
+    .map((t: any) => {
+      const id = String(t?.id ?? "");
+      if (!id) return null;
+      return toOption(id, t?.name || id);
+    })
+    .filter(Boolean) as SearchOption[];
+}

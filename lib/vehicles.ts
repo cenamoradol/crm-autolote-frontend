@@ -110,12 +110,13 @@ function buildQuery(params: Record<string, any>) {
 }
 
 /** LIST */
-export async function listVehicles(opts?: { status?: VehicleStatus; published?: boolean; search?: string; clearance?: boolean }) {
+export async function listVehicles(opts?: { status?: VehicleStatus; published?: boolean; search?: string; clearance?: boolean; vehicleTypeId?: string }) {
   const q = buildQuery({
     status: opts?.status,
     published: typeof opts?.published === "boolean" ? String(opts.published) : undefined,
     search: opts?.search,
     clearance: typeof opts?.clearance === "boolean" ? String(opts.clearance) : undefined,
+    vehicleTypeId: opts?.vehicleTypeId,
   });
   return apiFetch<Vehicle[]>(`/vehicles${q}`, { method: "GET" });
 }

@@ -8,6 +8,8 @@ import { deleteVehicle, listVehicles, type Vehicle, type VehicleStatus } from "@
 import { formatPrice } from "@/lib/currency";
 import { VehicleDetailsModal } from "@/components/inventory/VehicleDetailsModal";
 import { useUser } from "@/components/providers/UserProvider";
+import { searchVehicleTypes } from "@/lib/lookups";
+import type { SearchOption } from "@/components/ui/SearchSelect";
 
 function parsePublished(v: string): boolean | undefined {
     if (v === "true") return true;
@@ -67,6 +69,9 @@ export function VehicleListView({
     const [status, setStatus] = useState<string>(sp.get("status") ?? "");
     const [published, setPublished] = useState<string>(sp.get("published") ?? "");
     const [search, setSearch] = useState<string>(sp.get("search") ?? "");
+    const [vehicleTypeId, setVehicleTypeId] = useState<string>(sp.get("vehicleTypeId") ?? "");
+
+    const [types, setTypes] = useState<SearchOption[]>([]);
 
     const money = (v: any) => formatPrice(v, user.currencySymbol, user.currency);
 
@@ -85,6 +90,7 @@ export function VehicleListView({
                 published: parsePublished(published),
                 search: search || undefined,
                 clearance: filterMode === "clearance" ? true : undefined,
+                vehicleTypeId: vehicleTypeId || undefined,
             });
             setItems(data);
         } catch (e: any) {
@@ -95,9 +101,14 @@ export function VehicleListView({
     }
 
     useEffect(() => {
+        searchVehicleTypes().then(setTypes);
+    }, []);
+
+    useEffect(() => {
         setStatus(sp.get("status") ?? "");
         setPublished(sp.get("published") ?? "");
         setSearch(sp.get("search") ?? "");
+        setVehicleTypeId(sp.get("vehicleTypeId") ?? "");
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sp.toString()]);
@@ -115,6 +126,9 @@ export function VehicleListView({
 
         if (published === "true" || published === "false") qs.set("published", published);
         else qs.delete("published");
+
+        if (vehicleTypeId) qs.set("vehicleTypeId", vehicleTypeId);
+        else qs.delete("vehicleTypeId");
 
         const nextUrl = `${pathname}${qs.toString() ? `?${qs.toString()}` : ""}`;
         window.history.pushState({}, "", nextUrl);
@@ -186,6 +200,20 @@ export function VehicleListView({
                             </div>
                         </div>
 
+                        <div className="md:col-span-3">
+                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tipo de Vehículo</label>
+                            <select
+                                value={vehicleTypeId}
+                                onChange={(e) => setVehicleTypeId(e.target.value)}
+                                className="block w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-shadow cursor-pointer appearance-none"
+                            >
+                                <option value="">Todos los tipos</option>
+                                {types.map(t => (
+                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
                         {filterMode !== "clearance" && (
                             <div className="md:col-span-3">
                                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Estado</label>
@@ -236,6 +264,7 @@ export function VehicleListView({
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 font-semibold">
                                 <th className="px-6 py-4 min-w-[250px]">Vehículo</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Marca / Modelo</th>
+                                <th className="px-6 py-4 whitespace-nowrap">Tipo</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Año</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Motor</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Precio</th>
@@ -296,6 +325,9 @@ export function VehicleListView({
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                             {(v.brand?.name ?? "-") + " / " + (v.model?.name ?? "-")}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                            {v.vehicleType?.name ?? "-"}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">{v.year ?? "-"}</td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">{v.engineSize ? `${v.engineSize} L` : "-"}</td>
