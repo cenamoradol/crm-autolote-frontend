@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createService, type ServiceListingPayload } from "@/lib/services";
 import { listServiceCategories, type ServiceCategory } from "@/lib/service-categories";
 import toast from "react-hot-toast";
