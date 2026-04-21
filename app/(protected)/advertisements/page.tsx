@@ -26,6 +26,7 @@ export default function AdvertisementsPage() {
         placement: "VEHICLE_LIST" as "HERO" | "VEHICLE_LIST" | "FLOATING_BOTTOM",
         isActive: true,
         position: 0,
+        weight: 1,
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export default function AdvertisementsPage() {
             placement: ad.placement,
             isActive: ad.isActive,
             position: ad.position,
+            weight: ad.weight || 1,
         });
         setSelectedFile(null);
         setPreviewUrl(ad.imageUrl);
@@ -72,6 +74,7 @@ export default function AdvertisementsPage() {
             placement: "VEHICLE_LIST",
             isActive: true,
             position: 0,
+            weight: 1,
         });
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -136,6 +139,7 @@ export default function AdvertisementsPage() {
             fd.append("placement", formData.placement);
             fd.append("isActive", String(formData.isActive));
             fd.append("position", String(formData.position));
+            fd.append("weight", String(formData.weight));
 
             if (editingAd) {
                 await updateAdvertisement(editingAd.id, fd);
@@ -340,6 +344,16 @@ export default function AdvertisementsPage() {
                                     className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Peso / Prioridad (Rotación)</label>
+                                <input
+                                    type="number"
+                                    value={formData.weight}
+                                    onChange={e => setFormData({ ...formData, weight: parseInt(e.target.value) || 1 })}
+                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                <span className="text-[10px] text-slate-500">Valores altos aparecen con más frecuencia. Recomendado: 1-100.</span>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -440,6 +454,18 @@ export default function AdvertisementsPage() {
                                             <span className="flex items-center gap-1">
                                                 <span className="material-symbols-outlined text-[14px]">sort</span>
                                                 Pos: {ad.position}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-bold">
+                                                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                                                {ad.impressions || 0}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-bold">
+                                                <span className="material-symbols-outlined text-[14px]">ads_click</span>
+                                                {ad.clicks || 0}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold">
+                                                <span className="material-symbols-outlined text-[14px]">fitness_center</span>
+                                                Peso: {ad.weight || 1}
                                             </span>
                                         </div>
                                     </div>

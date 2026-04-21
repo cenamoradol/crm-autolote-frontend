@@ -9,6 +9,9 @@ export interface Advertisement {
     placement: "HERO" | "VEHICLE_LIST" | "FLOATING_BOTTOM";
     isActive: boolean;
     position: number;
+    weight: number;
+    impressions: number;
+    clicks: number;
     createdAt: string;
 }
 
