@@ -492,7 +492,7 @@ function MediaManagerTW({ vehicleId, disabled }: { vehicleId: string, disabled?:
               scale *= 0.8; // Último recurso: Bajar tamaño un 20% (ej. fotos de 48 Megapixeles)
             }
             blob = await tryConvert(img, scale, quality);
-            
+
             if (scale < 0.2) break; // Seguro contra bucle infinito
           }
 
@@ -996,7 +996,7 @@ export default function VehicleEditPage() {
                   <label className={labelClass}>Año</label>
                   <select className={selectClass} value={year} onChange={e => setYear(e.target.value)} disabled={isArchived || !canEdit}>
                     <option value="">Seleccione...</option>
-                    {Array.from({ length: 30 }).map((_, i) => {
+                    {Array.from({ length: 40 }).map((_, i) => {
                       const y = new Date().getFullYear() + 1 - i;
                       return <option key={y} value={y}>{y}</option>;
                     })}
