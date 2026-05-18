@@ -98,6 +98,7 @@ export type Vehicle = {
   sale?: { soldPrice?: string | number | null;[key: string]: any } | null;
   soldPrice?: string | number | null;
   consignorId?: string | null;
+  maxPublishDate?: string | null;
 };
 
 function buildQuery(params: Record<string, any>) {
