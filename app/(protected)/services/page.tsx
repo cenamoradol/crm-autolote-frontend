@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { listServices, deleteService, setServicePublished, type ServiceListing } from "@/lib/services";
 import toast from "react-hot-toast";
 
+
 export default function ServicesPage() {
   const [items, setItems] = useState<ServiceListing[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,6 +79,8 @@ export default function ServicesPage() {
               <th className="px-6 py-4">Servicio</th>
               <th className="px-6 py-4">Tipo</th>
               <th className="px-6 py-4">Contacto</th>
+              <th className="px-6 py-4 text-center">WhatsApp</th>
+              <th className="px-6 py-4 text-center">Compartir</th>
               <th className="px-6 py-4">Publicado</th>
               <th className="px-6 py-4 text-right">Acciones</th>
             </tr>
@@ -97,6 +100,18 @@ export default function ServicesPage() {
                 <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
                   {srv.phone ? <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">call</span> {srv.phone}</div> : null}
                   {srv.address ? <div className="flex items-center gap-1 mt-1 text-xs text-slate-400"><span className="material-symbols-outlined text-[14px]">location_on</span> {srv.address}</div> : null}
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded text-xs font-bold">
+                    <span className="material-symbols-outlined text-[14px]">chat</span>
+                    {srv.whatsappClicks || 0}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-1 rounded text-xs font-bold">
+                    <span className="material-symbols-outlined text-[14px]">share</span>
+                    {srv.shareClicks || 0}
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <button
@@ -131,7 +146,7 @@ export default function ServicesPage() {
 
             {items.length === 0 && !loading && (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                   No hay servicios registrados.
                 </td>
               </tr>

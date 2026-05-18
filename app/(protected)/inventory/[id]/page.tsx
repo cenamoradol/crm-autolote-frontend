@@ -693,6 +693,7 @@ export default function VehicleEditPage() {
   const [engineSize, setEngineSize] = useState("");
   const [vehicleTypeId, setVehicleTypeId] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [maxPublishDate, setMaxPublishDate] = useState("");
   const [isOffer, setIsOffer] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
   const [clearancePrice, setClearancePrice] = useState("");
@@ -754,6 +755,10 @@ export default function VehicleEditPage() {
           setClearancePrice(v.clearancePrice ? String(v.clearancePrice) : "");
           setIsOffer(!!v.offerPrice);
           setIsPublished(!!v.isPublished);
+          if (v.maxPublishDate) {
+            const date = new Date(v.maxPublishDate);
+            setMaxPublishDate(date.toISOString().split('T')[0]);
+          }
 
           // Administrative Costs
           setPurchasePrice(v.purchasePrice ? String(v.purchasePrice) : "");
@@ -823,6 +828,7 @@ export default function VehicleEditPage() {
         paperworkCosts: toStringOrUndefined(paperworkCosts),
         otherCosts: toStringOrUndefined(otherCosts),
         isPublished,
+        maxPublishDate: maxPublishDate || null,
         consignorId: consignor?.value || undefined
       });
       toast.success("Vehículo guardado correctamente!");
@@ -917,6 +923,28 @@ export default function VehicleEditPage() {
                   >
                     <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isPublished ? "translate-x-5" : "translate-x-1"}`} />
                   </button>
+                </div>
+              )}
+
+              {/* Fecha máxima de publicación */}
+              {canEdit && isPublished && (
+                <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
+                  <span className="text-sm text-gray-600 mr-2">Expira</span>
+                  <input
+                    type="date"
+                    value={maxPublishDate}
+                    onChange={e => setMaxPublishDate(e.target.value)}
+                    className="text-sm border-none bg-transparent focus:ring-0 text-gray-700 font-medium cursor-pointer"
+                  />
+                  {maxPublishDate && (
+                    <button
+                      onClick={() => setMaxPublishDate("")}
+                      className="ml-1 text-gray-400 hover:text-gray-600"
+                      title="Limpiar fecha"
+                    >
+                      <span className="text-xs">✕</span>
+                    </button>
+                  )}
                 </div>
               )}
 

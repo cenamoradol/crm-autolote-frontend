@@ -278,6 +278,7 @@ export default function VehicleCreatePage() {
   const [engineSize, setEngineSize] = useState("");
 
   const [isPublished, setIsPublished] = useState(false);
+  const [maxPublishDate, setMaxPublishDate] = useState("");
   const [isOffer, setIsOffer] = useState(false);
   const [offerPrice, setOfferPrice] = useState("");
   const [clearancePrice, setClearancePrice] = useState("");
@@ -403,6 +404,7 @@ export default function VehicleCreatePage() {
         paperworkCosts: toPriceOrUndefined(paperworkCosts),
         otherCosts: toPriceOrUndefined(otherCosts),
         isPublished,
+        maxPublishDate: maxPublishDate || null,
         isClearance: isClearanceMode,
         consignorId: consignor?.value || undefined
       };
@@ -859,7 +861,7 @@ export default function VehicleCreatePage() {
                   <div className="bg-blue-100 p-2 rounded-full text-blue-600">
                     <IconGlobe className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-medium text-gray-900">Publicado en la web</h4>
                     <p className="text-xs text-gray-500">Si se activa, el vehículo será visible en el catálogo público.</p>
                   </div>
@@ -870,6 +872,27 @@ export default function VehicleCreatePage() {
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublished ? "translate-x-6" : "translate-x-1"}`} />
                   </button>
                 </div>
+
+                {/* Fecha máxima de publicación */}
+                {isPublished && (
+                  <div className="flex items-center gap-3 mt-3 ml-11">
+                    <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 text-sm">Fecha máxima de publicación</h4>
+                      <p className="text-xs text-gray-500">Después de esta fecha, el vehículo ya no aparecerá en el sitio público.</p>
+                    </div>
+                    <input
+                      type="date"
+                      value={maxPublishDate}
+                      onChange={e => setMaxPublishDate(e.target.value)}
+                      className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 w-full md:w-auto justify-end">

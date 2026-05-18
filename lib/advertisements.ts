@@ -12,6 +12,8 @@ export interface Advertisement {
     weight: number;
     impressions: number;
     clicks: number;
+    whatsappClicks: number;
+    shareClicks: number;
     createdAt: string;
 }
 

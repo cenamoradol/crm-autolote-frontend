@@ -33,6 +33,7 @@ export type VehicleUpsertPayload = {
   isPublished?: boolean;
   isClearance?: boolean;
   consignorId?: string;
+  maxPublishDate?: string | null;
 };
 
 export type Brand = { id: string; name: string };
@@ -153,6 +154,7 @@ export async function createVehicle(payload: VehicleUpsertPayload) {
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
     isClearance: typeof payload.isClearance === "boolean" ? payload.isClearance : undefined,
     consignorId: payload.consignorId ?? undefined,
+    maxPublishDate: payload.maxPublishDate ?? undefined,
   };
 
   return apiFetch<Vehicle>(`/vehicles`, {
@@ -186,7 +188,9 @@ export async function updateVehicle(id: string, payload: Partial<VehicleUpsertPa
     paperworkCosts: payload.paperworkCosts ?? undefined,
     otherCosts: payload.otherCosts ?? undefined,
     isPublished: typeof payload.isPublished === "boolean" ? payload.isPublished : undefined,
+    isClearance: typeof payload.isClearance === "boolean" ? payload.isClearance : undefined,
     consignorId: payload.consignorId ?? undefined,
+    maxPublishDate: payload.maxPublishDate ?? undefined,
   };
 
   return apiFetch<Vehicle>(`/vehicles/${encodeURIComponent(id)}`, {

@@ -19,6 +19,8 @@ export type ServiceListing = {
   email?: string | null;
   description?: string | null;
   isPublished: boolean;
+  whatsappClicks: number;
+  shareClicks: number;
   createdAt: string;
   updatedAt: string;
   media?: ServiceMedia[];
