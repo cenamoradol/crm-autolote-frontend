@@ -182,6 +182,11 @@ const MODULES = [
     actions: ["read", "update"],
   },
   {
+    key: "whatsapp",
+    label: "WhatsApp Bot",
+    actions: ["read", "update"],
+  },
+  {
     key: "billing",
     label: "Facturación",
     actions: ["read", "update"],
