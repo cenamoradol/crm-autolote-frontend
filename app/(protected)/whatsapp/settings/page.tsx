@@ -66,6 +66,9 @@ export default function WhatsAppSettingsPage() {
   };
 
   const startPollingStatus = () => {
+    const maxWaitMs = 5 * 60 * 1000; // 5 minutes
+    const startTime = Date.now();
+
     pollingRef.current = setInterval(async () => {
       try {
         const status = await whatsappApi.getConnectionStatus();
@@ -80,6 +83,14 @@ export default function WhatsAppSettingsPage() {
             pollingRef.current = null;
           }
           await loadConfig();
+          return;
+        }
+
+        if (Date.now() - startTime > maxWaitMs) {
+          stopPolling();
+          setLinkingStatus('error');
+          setQrImage(null);
+          setErrorMessage('Se agotó el tiempo de espera. El navegador de WhatsApp cerró inesperadamente. Esto suele ocurrir en servidores con poca memoria. Intenta nuevamente o contacta soporte.');
         }
       } catch (error) {
         console.error('Polling error:', error);
