@@ -85,6 +85,11 @@ export const whatsappApi = {
 
   generateQR: () => apiFetch<{ qr: string }>("/whatsapp/config/qr", { method: "POST" }),
 
+  generateQRWithPhone: (phone: string) => apiFetch<{ qr: string }>("/whatsapp/config/qr/phone", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  }),
+
   getConnectionStatus: () => apiFetch<ConnectionStatus>("/whatsapp/config/status"),
 
   disconnect: () => apiFetch<{ success: boolean }>("/whatsapp/config/disconnect", { method: "POST" }),

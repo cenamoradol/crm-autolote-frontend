@@ -25,6 +25,8 @@ export default function WhatsAppSettingsPage() {
 
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
 
   useEffect(() => {
     loadConfig();
@@ -105,6 +107,39 @@ export default function WhatsAppSettingsPage() {
     } catch (error: any) {
       console.error("Error generating QR:", error);
       setErrorMessage(error.message || "Error al generar QR");
+      setLinkingStatus('error');
+    }
+  };
+
+  const handleGenerateQRWithPhone = async (phone: string) => {
+    setLinkingStatus('generating');
+    setErrorMessage(null);
+    setQrImage(null);
+    setShowPhoneModal(false);
+
+    let phoneToSend = phone.trim();
+
+    const cleanPhone = phoneToSend.replace(/\D/g, '');
+
+    if (cleanPhone.length === 8) {
+      phoneToSend = `+504${cleanPhone}`;
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('504')) {
+      phoneToSend = `+${cleanPhone}`;
+    } else if (cleanPhone.length === 10 && !cleanPhone.startsWith('504')) {
+      phoneToSend = `+504${cleanPhone.slice(2)}`;
+    }
+
+    console.log(`Phone input: ${phone} -> sending: ${phoneToSend}`);
+
+    try {
+      const data = await whatsappApi.generateQRWithPhone(phoneToSend);
+      setQrImage(data.qr);
+      setLinkingStatus('waiting_scan');
+      startPollingStatus();
+    } catch (error: any) {
+      console.error("Error generating pairing code:", error);
+      const errorMsg = error.message || "Error al generar código de vinculación";
+      setErrorMessage(errorMsg);
       setLinkingStatus('error');
     }
   };
@@ -207,11 +242,11 @@ export default function WhatsAppSettingsPage() {
         return (
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-4">
-              Escanea este código QR con WhatsApp del número que quieres vincular
+              Escanea este código QR con WhatsApp para vincular tu número
             </p>
             {qrImage && (
-              <div className="bg-white p-4 rounded-lg inline-block mb-4">
-                <QRCodeSVG value={qrImage} size={200} level="H" />
+              <div className="bg-white border-2 border-dashed border-indigo-300 rounded-xl p-4 inline-block mb-4">
+                <QRCodeSVG value={qrImage} size={256} />
               </div>
             )}
             <div className="animate-pulse mt-4">
@@ -222,11 +257,17 @@ export default function WhatsAppSettingsPage() {
                 <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
+            <p className="text-xs text-gray-500 mt-4">
+              Para vincular: WhatsApp {'>'} Ajustes {'>'} Dispositivos vinculados {'>'} Vincular dispositivo {'>'} Escanear código QR
+            </p>
             <button
-              onClick={handleGenerateQR}
+              onClick={() => {
+                setLinkingStatus('idle');
+                setQrImage(null);
+              }}
               className="mt-4 text-indigo-600 hover:text-indigo-800 text-sm"
             >
-              Regenerar QR
+              Cancelar
             </button>
           </div>
         );
@@ -297,7 +338,7 @@ export default function WhatsAppSettingsPage() {
               Vincular un número de WhatsApp para recibir mensajes de clientes
             </p>
             <button
-              onClick={handleGenerateQR}
+              onClick={() => setShowPhoneModal(true)}
               className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
             >
               Vincular WhatsApp
@@ -528,6 +569,46 @@ export default function WhatsAppSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Phone Modal for Pairing Code */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Vincular WhatsApp</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Ingresa el número de WhatsApp que deseas vincular. Se generará un código QR para vincular este número.
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+              Ingresa el número con el que usarás el bot (ej: 94692687 para Honduras).
+            </p>
+            <input
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              placeholder="94692687"
+              className="w-full border rounded-lg p-3 mb-4"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowPhoneModal(false);
+                  setPhoneInput("");
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleGenerateQRWithPhone(phoneInput)}
+                disabled={!phoneInput.trim()}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Generar QR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
