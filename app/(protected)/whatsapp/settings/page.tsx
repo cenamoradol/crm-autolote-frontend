@@ -20,6 +20,12 @@ export default function WhatsAppSettingsPage() {
 
   const [timezone, setTimezone] = useState("America/Mexico_City");
   const [closedMessage, setClosedMessage] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [fallbackMessage, setFallbackMessage] = useState("");
+  const [vendorRequestMessage, setVendorRequestMessage] = useState("");
+  const [noVendorsMessage, setNoVendorsMessage] = useState("");
+  const [vehicleSelectionMessage, setVehicleSelectionMessage] = useState("");
+  const [searchPromptMessage, setSearchPromptMessage] = useState("");
   const [newVendorUserId, setNewVendorUserId] = useState("");
   const [newVendorPhone, setNewVendorPhone] = useState("");
 
@@ -42,6 +48,12 @@ export default function WhatsAppSettingsPage() {
       setConfig(data);
       setTimezone(data.timezone);
       setClosedMessage(data.closedMessage || "");
+      setWelcomeMessage(data.welcomeMessage || "");
+      setFallbackMessage(data.fallbackMessage || "");
+      setVendorRequestMessage(data.vendorRequestMessage || "");
+      setNoVendorsMessage(data.noVendorsMessage || "");
+      setVehicleSelectionMessage(data.vehicleSelectionMessage || "");
+      setSearchPromptMessage(data.searchPromptMessage || "");
       setBusinessHours(data.businessHours);
       
       if (data.isConnected) {
@@ -177,7 +189,16 @@ export default function WhatsAppSettingsPage() {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      await whatsappApi.updateSettings({ timezone, closedMessage });
+      await whatsappApi.updateSettings({
+        timezone,
+        closedMessage,
+        welcomeMessage,
+        fallbackMessage,
+        vendorRequestMessage,
+        noVendorsMessage,
+        vehicleSelectionMessage,
+        searchPromptMessage,
+      });
       await loadConfig();
     } catch (error) {
       console.error("Error saving settings:", error);
@@ -479,6 +500,108 @@ export default function WhatsAppSettingsPage() {
             className="mt-3 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
           >
             {saving ? "Guardando..." : "Guardar Mensaje"}
+          </button>
+        </div>
+
+        {/* Bot Messages */}
+        <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+          <h2 className="text-lg font-semibold mb-4">Mensajes del Bot</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Personaliza los mensajes automáticos que envía el bot. Deja en blanco para usar el mensaje por defecto.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje de bienvenida
+              </label>
+              <textarea
+                value={welcomeMessage}
+                onChange={(e) => setWelcomeMessage(e.target.value)}
+                placeholder="¡Hola! 👋 Bienvenido..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje cuando no entiende
+              </label>
+              <textarea
+                value={fallbackMessage}
+                onChange={(e) => setFallbackMessage(e.target.value)}
+                placeholder="No entendí tu mensaje..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje al solicitar vendedor
+              </label>
+              <textarea
+                value={vendorRequestMessage}
+                onChange={(e) => setVendorRequestMessage(e.target.value)}
+                placeholder="Te estamos asignando a un vendedor..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje sin vendedores disponibles
+              </label>
+              <textarea
+                value={noVendorsMessage}
+                onChange={(e) => setNoVendorsMessage(e.target.value)}
+                placeholder="En este momento no hay vendedores disponibles..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje al seleccionar vehículo
+              </label>
+              <textarea
+                value={vehicleSelectionMessage}
+                onChange={(e) => setVehicleSelectionMessage(e.target.value)}
+                placeholder="Usa {vehicleInfo} y {priceText}..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Variables: {"{vehicleInfo}"} y {"{priceText}"}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje de búsqueda con muchos resultados
+              </label>
+              <textarea
+                value={searchPromptMessage}
+                onChange={(e) => setSearchPromptMessage(e.target.value)}
+                placeholder="Usa {count} para la cantidad de resultados..."
+                className="w-full border rounded-lg p-3 text-sm"
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Variable: {"{count}"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {saving ? "Guardando..." : "Guardar Mensajes"}
           </button>
         </div>
 

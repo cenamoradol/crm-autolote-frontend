@@ -223,3 +223,36 @@ export async function setVehiclePublish(id: string, isPublished: boolean) {
 export async function setVehiclePublished(id: string, isPublished: boolean) {
   return setVehiclePublish(id, isPublished);
 }
+
+/** Quick sale - marca el vehículo como SOLD con datos mínimos (precio obligatorio) */
+export type QuickSalePayload = {
+  soldPrice: number;
+  customerId?: string;
+  leadId?: string;
+  notes?: string;
+};
+
+export type QuickSaleResult = {
+  id: string;
+  storeId: string;
+  vehicleId: string;
+  soldByUserId: string;
+  createdByUserId?: string | null;
+  customerId?: string | null;
+  leadId?: string | null;
+  soldAt: string;
+  soldPrice?: string | null;
+  notes?: string | null;
+  source: "NORMAL" | "QUICK";
+  [key: string]: any;
+};
+
+export async function quickSellVehicle(vehicleId: string, payload: QuickSalePayload) {
+  return apiFetch<QuickSaleResult>(
+    `/vehicles/${encodeURIComponent(vehicleId)}/quick-sale`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+}

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 
 import { deleteVehicle, listVehicles, type Vehicle, type VehicleStatus } from "@/lib/vehicles";
 import { formatPrice } from "@/lib/currency";
 import { VehicleDetailsModal } from "@/components/inventory/VehicleDetailsModal";
+import { QuickSaleModal, type QuickSaleModalVehicle } from "@/components/inventory/QuickSaleModal";
 import { useUser } from "@/components/providers/UserProvider";
 import { searchVehicleTypes } from "@/lib/lookups";
 import type { SearchOption } from "@/components/ui/SearchSelect";
@@ -58,6 +60,7 @@ export function VehicleListView({
     const permissions = user.permissions || [];
     const canArchive = user.isSuperAdmin || permissions.includes("inventory:delete");
     const canEdit = user.isSuperAdmin || permissions.includes("inventory:update");
+    const canQuickSell = user.isSuperAdmin || permissions.includes("sales:quick_sell");
 
     const pathname = usePathname();
     const sp = useSearchParams();
@@ -77,6 +80,7 @@ export function VehicleListView({
 
     // Modal state
     const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+    const [quickSaleTarget, setQuickSaleTarget] = useState<QuickSaleModalVehicle | null>(null);
 
     const returnTo = useMemo(() => `${pathname}${sp.toString() ? `?${sp.toString()}` : ""}`, [pathname, sp]);
 
@@ -392,6 +396,19 @@ export function VehicleListView({
                                                         <span className="material-symbols-outlined text-[20px]">edit</span>
                                                     </Link>
                                                 )}
+                                                {canQuickSell && (v.status === "AVAILABLE" || v.status === "RESERVED") && (
+                                                    <button
+                                                        type="button"
+                                                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                        title="Marcar como vendido"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setQuickSaleTarget(v);
+                                                        }}
+                                                    >
+                                                        <span className="material-symbols-outlined text-[20px]">sell</span>
+                                                    </button>
+                                                )}
                                                 {canArchive && (
                                                     <button
                                                         type="button"
@@ -448,6 +465,16 @@ export function VehicleListView({
             <VehicleDetailsModal
                 vehicleId={selectedVehicleId}
                 onClose={() => setSelectedVehicleId(null)}
+            />
+
+            <QuickSaleModal
+                vehicle={quickSaleTarget}
+                onClose={() => setQuickSaleTarget(null)}
+                onSuccess={() => {
+                    setQuickSaleTarget(null);
+                    toast.success("Venta rápida registrada");
+                    load();
+                }}
             />
         </div>
     );

@@ -42,6 +42,12 @@ export type WhatsAppConfig = {
   connectedAt?: string;
   timezone: string;
   closedMessage?: string;
+  welcomeMessage?: string;
+  fallbackMessage?: string;
+  vendorRequestMessage?: string;
+  noVendorsMessage?: string;
+  vehicleSelectionMessage?: string;
+  searchPromptMessage?: string;
   status: {
     isConnected: boolean;
     connectedAt?: string;
@@ -94,7 +100,16 @@ export const whatsappApi = {
 
   disconnect: () => apiFetch<{ success: boolean }>("/whatsapp/config/disconnect", { method: "POST" }),
 
-  updateSettings: (data: { timezone?: string; closedMessage?: string }) =>
+  updateSettings: (data: {
+    timezone?: string;
+    closedMessage?: string;
+    welcomeMessage?: string;
+    fallbackMessage?: string;
+    vendorRequestMessage?: string;
+    noVendorsMessage?: string;
+    vehicleSelectionMessage?: string;
+    searchPromptMessage?: string;
+  }) =>
     apiFetch<WhatsAppConfig>("/whatsapp/config/settings", {
       method: "PATCH",
       body: JSON.stringify(data),

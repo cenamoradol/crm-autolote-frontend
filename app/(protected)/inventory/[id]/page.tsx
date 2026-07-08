@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { getVehicle, updateVehicle, type Vehicle, type VehicleUpsertPayload } from "@/lib/vehicles";
 import { getReservationByVehicle, type Reservation } from "@/lib/reservations";
 import SearchSelectTW from "@/components/common/SearchSelectTW";
+import { QuickSaleModal } from "@/components/inventory/QuickSaleModal";
 import { listColors } from "@/lib/catalog";
 import { useUser } from "@/components/providers/UserProvider";
 import {
@@ -854,6 +855,9 @@ export default function VehicleEditPage() {
   const user = useUser();
   const permissions = user.permissions || [];
   const isSold = vehicle?.status === "SOLD";
+  const canQuickSell = user.isSuperAdmin || permissions.includes("sales:quick_sell");
+  const showQuickSale = canQuickSell && !isSold && !isArchived;
+  const [showQuickSaleModal, setShowQuickSaleModal] = useState(false);
 
   const canOverride = user.isSuperAdmin || permissions.includes("sales:override_closed");
 
@@ -1252,6 +1256,26 @@ export default function VehicleEditPage() {
           <div className="space-y-6">
             <ReservationCard vehicleId={id} status={vehicle.status ?? ""} />
 
+            {showQuickSale && (
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-emerald-600 w-5 h-5">sell</span>
+                  <h3 className="text-lg font-bold text-gray-900">Venta Rápida</h3>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Marca el vehículo como vendido con un solo paso, sin necesidad de cliente ni documentos.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickSaleModal(true)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  Marcar como vendido
+                </button>
+              </div>
+            )}
+
             <SaleCard
               vehicleId={id}
               sale={vehicle.sale}
@@ -1311,6 +1335,16 @@ export default function VehicleEditPage() {
 
         </div>
       </div>
+
+      <QuickSaleModal
+        vehicle={showQuickSaleModal ? vehicle : null}
+        onClose={() => setShowQuickSaleModal(false)}
+        onSuccess={() => {
+          setShowQuickSaleModal(false);
+          toast.success("Venta rápida registrada");
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
