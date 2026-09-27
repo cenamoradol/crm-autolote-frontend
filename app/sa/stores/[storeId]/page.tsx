@@ -12,6 +12,7 @@ type StoreDetail = {
   slug: string;
   isActive: boolean;
   logoUrl: string | null;
+  urlWebsite?: string | null;
   currency: string;
   currencySymbol: string;
   domains?: { id: string; domain: string; isPrimary: boolean }[];
@@ -241,6 +242,7 @@ export default function StoreDetailPage({
     slug: "",
     isActive: true,
     logoUrl: "",
+    urlWebsite: "",
     currency: "USD",
     currencySymbol: "$"
   });
@@ -252,6 +254,7 @@ export default function StoreDetailPage({
       slug: data.slug,
       isActive: data.isActive,
       logoUrl: data.logoUrl || "",
+      urlWebsite: data.urlWebsite || "",
       currency: data.currency || "USD",
       currencySymbol: data.currencySymbol || "$"
     });
@@ -375,6 +378,20 @@ export default function StoreDetailPage({
                 </svg>
                 Dominio primario activo: <code className="font-semibold text-blue-600 dark:text-blue-400">{primaryDomain}</code>
               </div>
+            </div>
+          )}
+
+          {data.urlWebsite && (
+            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              Sitio web:{" "}
+              <a
+                href={data.urlWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+              >
+                {data.urlWebsite}
+              </a>
             </div>
           )}
         </div>
@@ -746,6 +763,22 @@ export default function StoreDetailPage({
                   value={editForm.logoUrl}
                   onChange={(e) => setEditForm(p => ({ ...p, logoUrl: e.target.value }))}
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                  URL del sitio web
+                </label>
+                <input
+                  type="url"
+                  className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  value={editForm.urlWebsite}
+                  onChange={(e) => setEditForm(p => ({ ...p, urlWebsite: e.target.value }))}
+                  placeholder="https://www.tudominio.com"
+                />
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  URL pública usada para enlaces de vehículos en catálogos y compartidos.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

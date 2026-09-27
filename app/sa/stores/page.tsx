@@ -19,6 +19,7 @@ type CreateStoreBody = {
   primaryDomain: string;
   primaryBranchName: string;
   primaryBranchAddress?: string;
+  urlWebsite?: string;
   isActive: boolean;
 };
 
@@ -34,6 +35,7 @@ export default function SaStoresPage() {
     primaryDomain: "",
     primaryBranchName: "Principal",
     primaryBranchAddress: "",
+    urlWebsite: "",
     isActive: true
   });
 
@@ -94,6 +96,7 @@ export default function SaStoresPage() {
         primaryDomain: "",
         primaryBranchName: "Principal",
         primaryBranchAddress: "",
+        urlWebsite: "",
         isActive: true
       });
 
@@ -171,6 +174,24 @@ export default function SaStoresPage() {
                 </div>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Debe existir en DNS cuando lo vayas a usar en producción (CNAME/A).
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium leading-6 text-slate-900 dark:text-slate-200">
+                  URL del sitio web
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="url"
+                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 dark:bg-slate-900 dark:ring-slate-700 dark:text-white dark:placeholder:text-slate-500"
+                    value={form.urlWebsite ?? ""}
+                    onChange={(e) => onChange("urlWebsite", e.target.value)}
+                    placeholder="https://www.tecambiotucarro.hn"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  URL pública visible para visitantes del catálogo (ej. links compartidos de vehículos). Si se deja vacío, se usa el dominio primario del portal.
                 </p>
               </div>
 
