@@ -272,6 +272,7 @@ export function VehicleListView({
                                 <th className="px-6 py-4 whitespace-nowrap">Año</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Motor</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Precio</th>
+                                <th className="px-6 py-4 whitespace-nowrap">WhatsApp</th>
 
                                 <th className="px-6 py-4 whitespace-nowrap">Status</th>
                                 <th className="px-6 py-4 whitespace-nowrap">Publicado</th>
@@ -362,6 +363,13 @@ export function VehicleListView({
                                                     </span>
                                                 ) : null}
                                             </div>
+                                        </td>
+
+                                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded text-xs font-bold">
+                                                <span className="material-symbols-outlined text-[14px]">chat</span>
+                                                {v.whatsappClicks || 0}
+                                            </span>
                                         </td>
 
                                         <td className="px-6 py-4 whitespace-nowrap">

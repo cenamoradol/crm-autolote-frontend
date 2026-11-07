@@ -176,6 +176,7 @@ export function VehicleDetailsModal({ vehicleId, onClose }: VehicleDetailsModalP
                             <DetailRow label="Motor" value={vehicle.engineSize ? `${vehicle.engineSize} L` : null} icon="build" />
                             <DetailRow label="Combustible" value={vehicle.fuelType} icon="local_gas_station" />
                             <DetailRow label="Ubicación" value={vehicle.branch?.name} icon="store" />
+                            <DetailRow label="Clics WhatsApp" value={vehicle.whatsappClicks ?? 0} icon="chat" />
                         </div>
                     </div>
 

@@ -57,6 +57,7 @@ export type Vehicle = {
   status: VehicleStatus;
   isPublished: boolean;
   isClearance: boolean;
+  whatsappClicks?: number;
 
   brandId: string;
   modelId: string;
