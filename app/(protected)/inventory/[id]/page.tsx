@@ -27,6 +27,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { revalidateVehiclePage } from "./actions";
 
 // --- Icons ---
 function IconArrowLeft({ className }: { className?: string }) {
@@ -43,6 +44,14 @@ function IconSave({ className }: { className?: string }) {
       <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
       <path d="M17 21v-8H7v8" />
       <path d="M7 3v5h8" />
+    </svg>
+  );
+}
+function IconRefresh({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+      <path d="M21 3v6h-6" />
     </svg>
   );
 }
@@ -677,6 +686,7 @@ export default function VehicleEditPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Form fields
   const [branchId, setBranchId] = useState("");
@@ -833,11 +843,24 @@ export default function VehicleEditPage() {
         consignorId: consignor?.value || undefined
       });
       toast.success("Vehículo guardado correctamente!");
-      // Refresh logic if needed or stay
+      // La ficha publica se cachea 1 hora: la refrescamos para que el cambio se vea ya.
+      const r = await revalidateVehiclePage();
+      if (!r.ok) toast.error(`Guardado, pero no se pudo refrescar la web: ${r.message}`);
     } catch {
       toast.error("Error al guardar");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleRefreshWeb() {
+    setRefreshing(true);
+    try {
+      const r = await revalidateVehiclePage();
+      if (r.ok) toast.success(r.message);
+      else toast.error(r.message);
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -971,6 +994,18 @@ export default function VehicleEditPage() {
                   className="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
                 >
                   {saving ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              )}
+
+              {canEdit && (
+                <button
+                  onClick={handleRefreshWeb}
+                  disabled={refreshing || isArchived}
+                  title="Fuerza la actualizacion de la ficha en el sitio publico (la web la cachea 1 hora)"
+                  className="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50"
+                >
+                  <IconRefresh className="w-4 h-4 mr-2 text-emerald-600" />
+                  {refreshing ? "Refrescando..." : "Refrescar web"}
                 </button>
               )}
             </div>
